@@ -282,6 +282,7 @@ const customQuestionButton = customQuestionForm.querySelector("button");
 const backToBooks = document.querySelector("#backToBooks");
 const adventureBookTitle = document.querySelector("#adventureBookTitle");
 const adventureBookAuthor = document.querySelector("#adventureBookAuthor");
+const adventureBackdrop = document.querySelector(".adventure-backdrop");
 const characterPortrait = document.querySelector("#characterPortrait");
 const characterImage = document.querySelector("#characterImage");
 const dialogueBox = document.querySelector(".dialogue-box");
@@ -303,27 +304,15 @@ const questionCategories = [
     ]
   },
   {
-    id: "action",
+    id: "place",
     number: "②",
-    title: "행동과 선택",
-    summary: "왜 그렇게 했는지, 다른 선택은 없었는지",
-    status: "행동 질문 고르기",
+    title: "장소 돌아보기",
+    summary: "장터, 밤길, 메밀꽃밭의 단서",
+    status: "장소 질문 고르기",
     questions: [
-      "그 인물은 왜 그런 행동을 했을까?",
-      "다른 선택을 했다면 이야기는 어떻게 달라졌을까?",
-      "그 선택은 옳았다고 볼 수 있을까?"
-    ]
-  },
-  {
-    id: "relationship",
-    number: "③",
-    title: "다른 인물과의 관계",
-    summary: "갈등, 영향, 관계의 변화",
-    status: "관계 질문 고르기",
-    questions: [
-      "두 인물의 관계는 어떻게 변했을까?",
-      "그 인물은 다른 인물에게 어떤 영향을 주었을까?",
-      "인물들 사이에 갈등이 생긴 이유는 무엇일까?"
+      "이 장소에는 어떤 단서가 숨어 있을까?",
+      "이 장소의 분위기는 인물의 마음을 어떻게 보여줄까?",
+      "이 장소에서 누가 무엇을 기억하고 있을까?"
     ]
   }
 ];
@@ -380,6 +369,35 @@ const characterRoleByBook = {
   momo: ["주인공", "친구", "상대 세력"]
 };
 
+const locationsByBook = {
+  memil: [
+    {
+      name: "봉평 장터",
+      summary: "허 생원이 오래 떠돌아온 장터",
+      clue: "과거의 기억과 현재의 만남이 겹쳐지는 출발점",
+      image: "./assets/places/memil-market.png"
+    },
+    {
+      name: "대화 장으로 가는 밤길",
+      summary: "허 생원, 조 선달, 동이가 함께 걷는 길",
+      clue: "인물들의 말과 침묵을 이어 볼 수 있는 길",
+      image: "./assets/places/memil-night-road.png"
+    },
+    {
+      name: "메밀꽃밭",
+      summary: "달빛 아래 하얗게 펼쳐진 풍경",
+      clue: "허 생원의 오래된 기억이 선명해지는 장소",
+      image: "./assets/places/memil-buckwheat-field.png"
+    },
+    {
+      name: "개울가",
+      summary: "동이가 허 생원을 도와주는 장면이 떠오르는 곳",
+      clue: "동이의 행동과 두 사람의 가까워지는 분위기를 볼 수 있는 곳",
+      image: "./assets/places/memil-stream.png"
+    }
+  ]
+};
+
 const profileImageByBook = {
   memil: [
     "profiles/memil-1.png",
@@ -400,6 +418,7 @@ const standingImageByBook = {
 
 const finalAnswerRulesByBook = {
   memil: {
+    question: "허 생원과 동이 사이에는 어떤 숨은 인연이 있을까?",
     answer: "동이는 허 생원의 아들일 가능성이 크다.",
     keywords: ["동이", "아들"]
   }
@@ -414,6 +433,7 @@ let didShelfDrag = false;
 let pendingSpineId = null;
 let activeCategory = null;
 let activeCharacter = null;
+let activePlace = null;
 let customInputMode = "question";
 let chatStarted = false;
 let activeAdventureBookId = null;
@@ -488,7 +508,18 @@ function getCharacterProfiles(book) {
   }));
 }
 
+function getBookLocations(book) {
+  return locationsByBook[book.id] || [
+    {
+      name: "중요한 장면의 장소",
+      summary: "책에서 사건이 크게 움직이는 곳",
+      clue: "인물의 말, 행동, 분위기를 함께 살펴볼 수 있는 곳"
+    }
+  ];
+}
+
 function setSceneCharacter(character) {
+  characterPortrait.classList.remove("is-place-hidden");
   const nextCharacter = character || getCharacterProfiles(selectedBook)[0];
 
   if (!nextCharacter?.sceneImage) {
@@ -502,6 +533,19 @@ function setSceneCharacter(character) {
   characterImage.src = nextCharacter.sceneImage;
 }
 
+function setScenePlace(place) {
+  if (!place?.image) {
+    adventureBackdrop.style.removeProperty("--place-image");
+    adventureBackdrop.classList.remove("has-place-image");
+    characterPortrait.classList.remove("is-place-hidden");
+    return;
+  }
+
+  adventureBackdrop.style.setProperty("--place-image", `url("${place.image}")`);
+  adventureBackdrop.classList.add("has-place-image");
+  characterPortrait.classList.add("is-place-hidden");
+}
+
 function normalizeAnswerText(text) {
   return text.replace(/\s/g, "").toLowerCase();
 }
@@ -510,9 +554,14 @@ function getFinalAnswerRule(book) {
   const firstCharacter = getMajorCharacters(book)[0] || book.title;
 
   return finalAnswerRulesByBook[book.id] || {
+    question: `「${book.title}」에서 끝까지 풀어야 할 숨은 질문은 무엇일까?`,
     answer: `${firstCharacter}이/가 이 책의 핵심 인물입니다.`,
     keywords: [firstCharacter]
   };
+}
+
+function getMysteryQuestion(book) {
+  return getFinalAnswerRule(book).question;
 }
 
 function resetAdventureProgress() {
@@ -558,7 +607,12 @@ function syncAdventureBook() {
   adventureScreen.style.setProperty("--scene-b", selectedBook.coverB);
   characterPortrait.style.setProperty("--scene-a", selectedBook.coverA);
   characterPortrait.style.setProperty("--scene-b", selectedBook.coverB);
-  setSceneCharacter(activeCharacter);
+  if (activePlace) {
+    setScenePlace(activePlace);
+  } else {
+    setScenePlace(null);
+    setSceneCharacter(activeCharacter);
+  }
   updateReadingStatus();
 }
 
@@ -613,8 +667,11 @@ function renderCategoryChoices(options = {}) {
 
   activeCategory = null;
   activeCharacter = null;
+  activePlace = null;
   customInputMode = "question";
-  chatTitle.textContent = "질문을 골라 보세요";
+  setScenePlace(null);
+  setSceneCharacter(null);
+  chatTitle.textContent = getMysteryQuestion(selectedBook);
   clearQuestionPanel();
   toggleCustomQuestion(false);
   setCustomQuestionButtonText("묻기");
@@ -622,7 +679,7 @@ function renderCategoryChoices(options = {}) {
   showChoiceOverlay();
 
   if (shouldUpdateDialogue) {
-    setDialogue("무엇을 물어볼까? ① 마음, ② 행동과 선택, ③ 관계 중에서 질문 방향을 골라줘.", "AI 독서 파트너");
+    setDialogue("이 질문을 풀기 위해 어디서 단서를 찾을까? ① 인물의 마음, ② 장소 돌아보기 중에서 골라줘.", "AI 독서 파트너");
   }
 
   questionCategories.forEach((category) => {
@@ -641,7 +698,9 @@ function renderCharacterChoices(categoryId) {
 
   activeCategory = category;
   activeCharacter = null;
+  activePlace = null;
   customInputMode = "question";
+  setScenePlace(null);
   chatTitle.textContent = "Q. 누구의 마음?";
   clearQuestionPanel();
   toggleCustomQuestion(false);
@@ -689,6 +748,48 @@ function renderCharacterChoices(categoryId) {
   questionPanel.appendChild(profileGrid);
 }
 
+function renderPlaceChoices(categoryId) {
+  const category = questionCategories.find((item) => item.id === categoryId);
+  if (!category) return;
+
+  activeCategory = category;
+  activeCharacter = null;
+  activePlace = null;
+  customInputMode = "question";
+  setScenePlace(null);
+  chatTitle.textContent = "Q. 어느 장소를 돌아볼까?";
+  clearQuestionPanel();
+  toggleCustomQuestion(false);
+  setCustomQuestionButtonText("묻기");
+  updateReadingStatus();
+  showChoiceOverlay();
+  setDialogue("이번에는 장소를 살펴보자. 장소를 고르면 그곳에 숨어 있는 분위기와 단서를 함께 찾아볼게.", "AI 독서 파트너");
+
+  const placeGrid = document.createElement("div");
+  placeGrid.className = "place-grid";
+
+  getBookLocations(selectedBook).forEach((place, index) => {
+    const button = document.createElement("button");
+    button.className = "place-button";
+    button.type = "button";
+    button.dataset.placeIndex = String(index);
+
+    const name = document.createElement("strong");
+    name.textContent = place.name;
+
+    const summary = document.createElement("span");
+    summary.textContent = place.summary;
+
+    const clue = document.createElement("small");
+    clue.textContent = place.clue;
+
+    button.append(name, summary, clue);
+    placeGrid.appendChild(button);
+  });
+
+  questionPanel.appendChild(placeGrid);
+}
+
 function renderDetailQuestions(categoryId) {
   const category = questionCategories.find((item) => item.id === categoryId);
   if (!category) return;
@@ -698,10 +799,19 @@ function renderDetailQuestions(categoryId) {
     return;
   }
 
+  if (category.id === "place" && !activePlace) {
+    renderPlaceChoices(categoryId);
+    return;
+  }
+
   activeCategory = category;
   customInputMode = "question";
-  const targetTitle = activeCharacter && category.id === "mind" ? `${activeCharacter.name}의 마음` : category.title;
-  chatTitle.textContent = activeCharacter && category.id === "mind" ? `${category.number} ${targetTitle}` : `${category.number} ${category.title}`;
+  const targetTitle = activeCharacter && category.id === "mind"
+    ? `${activeCharacter.name}의 마음`
+    : activePlace && category.id === "place"
+      ? `${activePlace.name} 돌아보기`
+      : category.title;
+  chatTitle.textContent = `${category.number} ${targetTitle}`;
   clearQuestionPanel();
   toggleCustomQuestion(true);
   setCustomQuestionButtonText("묻기");
@@ -727,6 +837,7 @@ function openAdventureScreen() {
     chatLog.innerHTML = "";
     activeCategory = null;
     activeCharacter = null;
+    activePlace = null;
     activeAdventureBookId = selectedBook.id;
     resetAdventureProgress();
   }
@@ -736,7 +847,7 @@ function openAdventureScreen() {
   updateReadingStatus();
 
   if (!chatLog.children.length) {
-    appendChatMessage(`「${selectedBook.title}」 속으로 들어왔어. 인물의 마음, 행동, 관계 중 무엇을 먼저 살펴볼까?`, "guide");
+    appendChatMessage(`「${selectedBook.title}」 속으로 들어왔어. 오늘 풀 질문은 “${getMysteryQuestion(selectedBook)}”야.`, "guide");
   }
 
   renderCategoryChoices();
@@ -747,11 +858,10 @@ function returnToBookShelf() {
   goToBooks();
 }
 
-function buildDemoAnswer({ question, category, book, character }) {
+function buildDemoAnswer({ question, category, book, character, place }) {
   const guideByCategory = {
     mind: "인물의 마음은 말로 직접 드러나기도 하지만, 망설임이나 행동 속에 숨어 있기도 해요.",
-    action: "행동과 선택은 그 인물이 처한 상황, 바라는 것, 피하고 싶은 것을 함께 보면 더 잘 보여요.",
-    relationship: "관계는 한 장면만 보지 말고, 처음과 나중의 말투와 태도가 어떻게 달라졌는지 비교하면 좋아요."
+    place: "장소는 배경처럼 보이지만, 인물의 기억과 마음, 숨은 단서를 보여주는 중요한 장면이에요."
   };
 
   const guide = guideByCategory[category.id] || "작품 속 근거를 하나씩 짚어 보면 답을 더 단단하게 만들 수 있어요.";
@@ -761,12 +871,13 @@ function buildDemoAnswer({ question, category, book, character }) {
     "",
     `질문: ${question}`,
     character ? `인물: ${character.name}` : "",
+    place ? `장소: ${place.name}` : "",
     `책: ${book.title}`,
     "",
     guide,
     "먼저 질문 속 인물이 어떤 장면에 있었는지 떠올리고, 그 장면의 말·행동·상황을 근거로 답해 보세요.",
     "",
-    "이제 다시 ① 마음, ② 행동과 선택, ③ 관계 중에서 골라 이어갈 수 있어요."
+    "이제 다시 ① 인물의 마음, ② 장소 돌아보기 중에서 골라 이어갈 수 있어요."
   ].join("\n");
 }
 
@@ -793,7 +904,7 @@ function buildDemoAnswerCheck({ answer, book }) {
 
   return {
     correct: false,
-    message: "아직 정답이라고 보기는 어려워요. 질문을 더 골라서 인물의 마음, 행동, 관계 단서를 조금 더 모아 보세요."
+    message: "아직 정답이라고 보기는 어려워요. 질문을 더 골라서 인물의 마음과 장소 단서를 조금 더 모아 보세요."
   };
 }
 
@@ -856,9 +967,19 @@ async function submitReadingQuestion(question) {
     return;
   }
 
+  if (activeCategory.id === "place" && !activePlace) {
+    renderPlaceChoices(activeCategory.id);
+    return;
+  }
+
   const cleanQuestion = question.trim();
   const selectedCharacter = activeCategory.id === "mind" ? activeCharacter : null;
-  const questionText = selectedCharacter ? `${selectedCharacter.name}의 마음: ${cleanQuestion}` : cleanQuestion;
+  const selectedPlace = activeCategory.id === "place" ? activePlace : null;
+  const questionText = selectedCharacter
+    ? `${selectedCharacter.name}의 마음: ${cleanQuestion}`
+    : selectedPlace
+      ? `${selectedPlace.name} 돌아보기: ${cleanQuestion}`
+      : cleanQuestion;
 
   const payload = {
     book: {
@@ -878,6 +999,11 @@ async function submitReadingQuestion(question) {
       image: selectedCharacter.profileImage,
       profileImage: selectedCharacter.profileImage,
       sceneImage: selectedCharacter.sceneImage
+    } : null,
+    place: selectedPlace ? {
+      name: selectedPlace.name,
+      summary: selectedPlace.summary,
+      clue: selectedPlace.clue
     } : null,
     rawQuestion: cleanQuestion,
     question: questionText
@@ -1142,6 +1268,17 @@ questionPanel.addEventListener("click", (event) => {
     if (activeCharacter) {
       setSceneCharacter(activeCharacter);
       renderDetailQuestions("mind");
+    }
+    return;
+  }
+
+  const placeButton = event.target.closest(".place-button");
+  if (placeButton) {
+    const places = getBookLocations(selectedBook);
+    activePlace = places[Number(placeButton.dataset.placeIndex)] || null;
+    if (activePlace) {
+      setScenePlace(activePlace);
+      renderDetailQuestions("place");
     }
     return;
   }

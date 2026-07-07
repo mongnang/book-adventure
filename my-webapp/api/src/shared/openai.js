@@ -2,22 +2,25 @@ function getOpenAIConfig() {
   const chatUrl = process.env.AZURE_OPENAI_CHAT_URL?.trim();
   const endpoint = process.env.AZURE_OPENAI_ENDPOINT?.trim();
   const apiKey = process.env.AZURE_OPENAI_API_KEY?.trim();
-  const model = process.env.AZURE_OPENAI_MODEL?.trim() || process.env.AZURE_OPENAI_DEPLOYMENT?.trim();
-  const apiVersion = process.env.AZURE_OPENAI_API_VERSION?.trim() || "v1";
+  const deployment = process.env.AZURE_OPENAI_DEPLOYMENT?.trim() || process.env.AZURE_OPENAI_MODEL?.trim();
+  const apiVersion = process.env.AZURE_OPENAI_API_VERSION?.trim() || "2024-06-01";
 
   if (!apiKey) return null;
-  if (chatUrl) return { apiKey, apiVersion, chatUrl, model };
-  if (!endpoint || !model) return null;
+  if (chatUrl) return { apiKey, apiVersion, chatUrl, deployment, mode: "custom" };
+  if (!endpoint || !deployment) return null;
 
-  return { apiKey, apiVersion, endpoint, model };
+  return { apiKey, apiVersion, endpoint, deployment, mode: endpoint.includes("/openai/v1") ? "v1" : "deployment" };
 }
 
 function buildChatUrl(config) {
   if (config.chatUrl) return config.chatUrl;
 
   const base = config.endpoint.replace(/\/+$/, "");
-  const root = base.endsWith("/openai/v1") ? base : `${base}/openai/v1`;
-  return `${root}/chat/completions?api-version=${encodeURIComponent(config.apiVersion)}`;
+  if (config.mode === "v1") {
+    return `${base}/chat/completions?api-version=${encodeURIComponent(config.apiVersion)}`;
+  }
+
+  return `${base}/openai/deployments/${encodeURIComponent(config.deployment)}/chat/completions?api-version=${encodeURIComponent(config.apiVersion)}`;
 }
 
 function isOpenAIConfigured() {
@@ -31,11 +34,14 @@ async function completeChat(messages, options = {}) {
   }
 
   const body = {
-    model: config.model,
     messages,
     temperature: options.temperature ?? 0.4,
     max_completion_tokens: options.maxTokens ?? 700
   };
+
+  if (config.mode === "v1" || config.mode === "custom") {
+    body.model = config.deployment;
+  }
 
   if (options.responseFormat) {
     body.response_format = options.responseFormat;

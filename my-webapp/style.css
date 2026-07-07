@@ -461,6 +461,14 @@ button {
     url("./assets/library.png") center / cover no-repeat;
   filter: saturate(0.82) brightness(0.58);
   transform: scale(1.03);
+  transition: filter 220ms ease, opacity 220ms ease;
+}
+
+.adventure-backdrop.has-place-image {
+  background:
+    linear-gradient(90deg, rgba(12, 6, 4, 0.58), rgba(12, 6, 4, 0.12), rgba(12, 6, 4, 0.7)),
+    var(--place-image) center / cover no-repeat;
+  filter: saturate(0.95) brightness(0.64);
 }
 
 .adventure-screen::before {
@@ -693,6 +701,12 @@ button {
   display: none;
 }
 
+.character-portrait.is-place-hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%) translateY(18px);
+}
+
 .portrait-hair,
 .portrait-face,
 .portrait-body {
@@ -890,6 +904,13 @@ button {
   gap: 10px;
 }
 
+.place-grid {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(auto-fit, minmax(188px, 1fr));
+  gap: 10px;
+}
+
 .profile-button {
   display: grid;
   justify-items: center;
@@ -904,6 +925,47 @@ button {
   color: #fff2d7;
   text-align: center;
   cursor: pointer;
+}
+
+.place-button {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-height: 132px;
+  padding: 14px;
+  border: 1px solid rgba(255, 226, 174, 0.28);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(255, 246, 225, 0.12), rgba(217, 175, 98, 0.08)),
+    rgba(255, 246, 225, 0.06);
+  color: #fff2d7;
+  text-align: left;
+  cursor: pointer;
+}
+
+.place-button strong,
+.place-button span,
+.place-button small {
+  display: block;
+  overflow-wrap: anywhere;
+  word-break: keep-all;
+}
+
+.place-button strong {
+  color: #ffe4ad;
+  font-size: 15px;
+}
+
+.place-button span {
+  color: rgba(255, 242, 215, 0.9);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.place-button small {
+  color: rgba(242, 222, 194, 0.7);
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 .profile-image {
@@ -1014,6 +1076,7 @@ button {
 .choice-button:hover,
 .detail-button:hover,
 .profile-button:hover,
+.place-button:hover,
 .answer-guess-button:hover,
 .back-to-books:hover,
 .next-question-button:hover,
@@ -1150,6 +1213,11 @@ button {
 
   .profile-grid {
     grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+    gap: 8px;
+  }
+
+  .place-grid {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
     gap: 8px;
   }
 
@@ -1397,6 +1465,10 @@ button {
 
   .profile-grid {
     grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  }
+
+  .place-grid {
+    grid-template-columns: 1fr;
   }
 }
 

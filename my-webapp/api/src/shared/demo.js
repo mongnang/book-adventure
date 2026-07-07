@@ -9,18 +9,19 @@ function normalizeText(text) {
 function buildPracticeAnswer(payload) {
   const categoryGuide = {
     mind: "인물의 마음은 말로 직접 드러나기도 하지만, 망설임이나 행동 속에 숨어 있기도 해요.",
-    action: "행동과 선택은 그 인물이 처한 상황, 바라는 것, 피하고 싶은 것을 함께 보면 더 잘 보여요.",
-    relationship: "관계는 처음과 나중의 말투와 태도가 어떻게 달라졌는지 비교하면 더 잘 보여요."
+    place: "장소는 배경처럼 보이지만, 인물의 기억과 마음, 숨은 단서를 보여주는 중요한 장면이에요."
   };
 
   const guide = categoryGuide[payload.category?.id] || "작품 속 근거를 하나씩 짚어 보면 답을 더 단단하게 만들 수 있어요.";
   const characterLine = payload.character?.name ? `인물: ${payload.character.name}` : "";
+  const placeLine = payload.place?.name ? `장소: ${payload.place.name}` : "";
 
   return [
     "좋은 질문이에요. 지금은 Azure OpenAI 연결 전 연습 답변입니다.",
     "",
     `질문: ${payload.question || payload.rawQuestion}`,
     characterLine,
+    placeLine,
     `책: ${payload.book?.title || "선택한 책"}`,
     "",
     guide,
@@ -47,7 +48,7 @@ function checkKnownAnswer(payload) {
 
   return {
     correct: false,
-    message: "아직 정답이라고 보기는 어려워요. 인물의 말, 기억, 관계 단서를 조금 더 모아 보세요."
+    message: "아직 정답이라고 보기는 어려워요. 인물의 말, 기억, 장소 단서를 조금 더 모아 보세요."
   };
 }
 

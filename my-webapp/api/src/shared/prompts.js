@@ -16,9 +16,11 @@ function buildSystemPrompt(book) {
     "",
     `책: ${adventureBook.title}`,
     `작가: ${adventureBook.author}`,
+    `학생이 풀어야 할 질문: ${adventureBook.mysteryQuestion || adventureBook.mystery}`,
     `현재 미스터리: ${adventureBook.mystery}`,
     `원전 근거 메모: ${adventureBook.sourceNote}`,
     `주요 인물: ${adventureBook.characters.join(", ") || "학생이 선택한 책의 주요 인물"}`,
+    `주요 장소: ${adventureBook.locations?.join(", ") || "학생이 선택한 책의 중요한 장소"}`,
     `단서 방향: ${adventureBook.clueHints.join(" / ")}`
   ].join("\n");
 }
@@ -27,6 +29,9 @@ function buildTurnMessages(payload) {
   const characterLine = payload.character
     ? `학생이 선택한 인물: ${payload.character.name} (${payload.character.role || "역할 미상"})`
     : "학생이 특정 인물을 고르지 않았다.";
+  const placeLine = payload.place
+    ? `학생이 선택한 장소: ${payload.place.name} - ${payload.place.summary || ""} ${payload.place.clue || ""}`.trim()
+    : "학생이 특정 장소를 고르지 않았다.";
 
   return [
     {
@@ -39,6 +44,7 @@ function buildTurnMessages(payload) {
         `학생 질문: ${payload.question || payload.rawQuestion}`,
         `질문 범주: ${payload.category?.title || "자유 질문"}`,
         characterLine,
+        placeLine,
         "",
         "학생에게 바로 사용할 수 있는 한국어 답변을 작성해 줘."
       ].join("\n")
@@ -63,6 +69,7 @@ function buildAnswerCheckMessages(payload) {
       role: "user",
       content: [
         `책: ${adventureBook.title}`,
+        `학생이 풀어야 할 질문: ${adventureBook.mysteryQuestion || adventureBook.mystery}`,
         `정답 기준: ${adventureBook.finalAnswer || "원전 근거와 학생이 모은 단서를 바탕으로 판정"}`,
         `학생 답: ${payload.answer}`,
         `찾은 단서 수: ${payload.cluesFound ?? 0}`,

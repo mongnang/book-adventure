@@ -40,6 +40,7 @@ app.http("adventureTurn", {
       sessionId: payload.sessionId,
       bookId: payload.book.id,
       categoryId: payload.category?.id || "free",
+      placeName: payload.place?.name || null,
       question: payload.question || payload.rawQuestion,
       answer,
       mode
