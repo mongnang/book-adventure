@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>한 권으로의 모험</title>
+    <link rel="stylesheet" href="./style.css?v=20260707-1800">
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="hero-screen" id="heroScreen" aria-label="도서관 입장 화면">
+        <div class="library-photo" aria-hidden="true"></div>
+        <div class="library-shade" aria-hidden="true"></div>
+        <div class="dust-layer" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+        <div class="lamp-glow" aria-hidden="true"></div>
+
+        <div class="hero-copy">
+          <p class="kicker">AI 독서 모험 챗봇</p>
+          <h1>한 권으로의 모험</h1>
+          <p class="hero-subtitle">
+            책장 사이로 들어가 한 권을 고르고, 이야기 속 질문과 단서를 따라가 보세요.
+          </p>
+        </div>
+
+        <button class="enter-control" id="enterControl" type="button" aria-label="책 선택 화면으로 이동">
+          <span class="mouse-shape" aria-hidden="true"></span>
+          <span>아래로 드래그</span>
+        </button>
+      </section>
+
+      <section class="book-screen" id="bookScreen" aria-label="책 선택 화면">
+        <aside class="cover-stage" aria-live="polite">
+          <div class="cover-light" aria-hidden="true"></div>
+          <div class="selected-book">
+            <div class="cover-art" id="selectedCover" role="img" aria-label="선택한 책 표지">
+              <span class="cover-frame"></span>
+              <span class="cover-title" id="coverTitle">메밀꽃 필 무렵</span>
+              <span class="cover-author" id="coverAuthor">이효석</span>
+              <span class="cover-mark">AI Reading Adventure</span>
+            </div>
+            <div class="selected-meta">
+              <p class="section-label">선택한 책</p>
+              <h2 id="selectedTitle">메밀꽃 필 무렵</h2>
+              <p id="selectedAuthor">이효석</p>
+              <p id="selectedDescription">
+                달빛 아래 길 위에서 이어지는 만남과 기억을 따라가는 한국 단편소설입니다.
+              </p>
+              <button class="start-button" id="startButton" type="button">이 책으로 모험 시작</button>
+            </div>
+          </div>
+        </aside>
+
+        <section class="shelf-stage" aria-label="책장">
+          <header class="shelf-header">
+            <p class="section-label">책장</p>
+            <h2>책등을 눌러 책을 고르세요</h2>
+            <p>오른쪽 또는 왼쪽으로 드래그하면 책장이 부드럽게 움직입니다.</p>
+          </header>
+
+          <div class="shelf-window" id="shelfWindow">
+            <div class="shelf-row" id="shelfRow" aria-label="선택 가능한 책 목록"></div>
+          </div>
+
+          <div class="shelf-wood" aria-hidden="true"></div>
+        </section>
+      </section>
+
+      <section class="adventure-screen" id="adventureScreen" aria-label="대화형 독서 모험 화면">
+        <div class="adventure-backdrop" aria-hidden="true"></div>
+
+        <button class="back-to-books" id="backToBooks" type="button">책장으로</button>
+
+        <div class="adventure-hud">
+          <div class="hud-book-card">
+            <p class="section-label">책 제목</p>
+            <strong id="hudBookTitle">메밀꽃 필 무렵</strong>
+            <small id="hudBookAuthor">이효석</small>
+          </div>
+          <aside class="reading-status" id="readingStatus" aria-live="polite">
+            <p>진행 상태</p>
+            <strong id="statusSummary">
+              <span>기회: 10/10</span>
+              <span>발견한 단서: 0</span>
+              <span>주요 인물: 허 생원, 조 선달, 동이</span>
+            </strong>
+          </aside>
+          <button class="answer-guess-button" id="answerGuessButton" type="button">정답 맞추기</button>
+        </div>
+
+        <div class="adventure-layout">
+          <section class="character-stage" aria-label="인물 대화 장면">
+            <div class="scene-bookmark">
+              <span id="adventureBookTitle">메밀꽃 필 무렵</span>
+              <small id="adventureBookAuthor">이효석</small>
+            </div>
+
+            <div class="character-portrait" id="characterPortrait" aria-hidden="true">
+              <img class="portrait-image" id="characterImage" alt="">
+              <span class="portrait-hair"></span>
+              <span class="portrait-face"></span>
+              <span class="portrait-body"></span>
+            </div>
+
+            <div class="dialogue-box" aria-live="polite">
+              <p class="speaker-name" id="speakerName">AI 독서 파트너</p>
+              <p class="dialogue-text" id="dialogueText">
+                책 속 인물의 마음, 선택, 관계를 함께 따라가 볼게요.
+              </p>
+              <button class="next-question-button is-hidden" id="nextQuestionButton" type="button">다음 질문 고르기</button>
+              <section class="reading-chat choice-overlay" id="readingChat" aria-label="AI 독서 질문 도우미">
+                <header class="reading-chat-header">
+                  <p class="section-label">AI 독서 질문</p>
+                  <h2 id="chatTitle">질문을 골라 보세요</h2>
+                </header>
+
+                <div class="chat-log is-hidden" id="chatLog" aria-live="polite"></div>
+                <div class="question-panel" id="questionPanel"></div>
+
+                <form class="custom-question is-hidden" id="customQuestionForm">
+                  <input id="customQuestionInput" type="text" autocomplete="off" placeholder="직접 질문 입력">
+                  <button type="submit">묻기</button>
+                </form>
+              </section>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <script src="./agent-client.js?v=20260707-1900"></script>
+    <script src="./app.js?v=20260707-1800"></script>
+  </body>
+</html>
