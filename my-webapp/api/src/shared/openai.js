@@ -16,15 +16,20 @@ function buildChatUrl(config) {
   if (config.chatUrl) return config.chatUrl;
 
   const base = config.endpoint.replace(/\/+$/, "");
-  if (config.mode === "v1") {
-    return `${base}/chat/completions`;
-  }
-
   return `${base}/openai/deployments/${encodeURIComponent(config.deployment)}/chat/completions?api-version=${encodeURIComponent(config.apiVersion)}`;
+}
+
+function buildResponsesUrl(config) {
+  const base = config.endpoint.replace(/\/+$/, "");
+  return `${base}/responses`;
 }
 
 function isOpenAIConfigured() {
   return Boolean(getOpenAIConfig());
+}
+
+function getCallUrl(config) {
+  return config.mode === "v1" ? buildResponsesUrl(config) : buildChatUrl(config);
 }
 
 function getOpenAIDiagnostics() {
@@ -40,7 +45,7 @@ function getOpenAIDiagnostics() {
 
   let chatUrl = "";
   try {
-    chatUrl = buildChatUrl(config);
+    chatUrl = getCallUrl(config);
   } catch (error) {
     chatUrl = "unavailable";
   }
@@ -48,11 +53,94 @@ function getOpenAIDiagnostics() {
   return {
     configured: true,
     mode: config.mode,
+    apiKind: config.mode === "v1" ? "responses" : "chat-completions",
     deployment: config.deployment || null,
     apiVersion: config.apiVersion,
     endpointUsesV1: Boolean(config.endpoint?.includes("/openai/v1")),
     chatUrl
   };
+}
+
+function buildHeaders(config) {
+  return {
+    "Content-Type": "application/json",
+    "api-key": config.apiKey
+  };
+}
+
+function supportsTemperatureForDeployment(deployment) {
+  return !/^gpt-5/i.test(deployment || "") && !/^o\d/i.test(deployment || "");
+}
+
+function buildChatCompletionsBody(config, messages, options) {
+  const body = {
+    messages,
+    max_completion_tokens: options.maxTokens ?? 700
+  };
+
+  if (supportsTemperatureForDeployment(config.deployment) && options.temperature !== undefined) {
+    body.temperature = options.temperature;
+  }
+
+  if (config.mode === "custom") {
+    body.model = config.deployment;
+  }
+
+  if (options.responseFormat) {
+    body.response_format = options.responseFormat;
+  }
+
+  return body;
+}
+
+function buildResponsesBody(config, messages, options) {
+  const systemMessages = messages
+    .filter((message) => message.role === "system")
+    .map((message) => message.content)
+    .join("\n\n");
+  const input = messages
+    .filter((message) => message.role !== "system")
+    .map((message) => `${message.role.toUpperCase()}:\n${message.content}`)
+    .join("\n\n");
+
+  let instructions = systemMessages;
+  if (options.responseFormat?.type === "json_object") {
+    instructions = [
+      instructions,
+      "반드시 JSON object만 출력하고, 코드블록이나 설명 문장은 붙이지 마세요."
+    ].filter(Boolean).join("\n\n");
+  }
+
+  const body = {
+    model: config.deployment,
+    input: input || messages.map((message) => message.content).join("\n\n"),
+    max_output_tokens: options.maxTokens ?? 700
+  };
+
+  if (instructions) {
+    body.instructions = instructions;
+  }
+
+  if (supportsTemperatureForDeployment(config.deployment) && options.temperature !== undefined) {
+    body.temperature = options.temperature;
+  }
+
+  return body;
+}
+
+function extractResponsesText(data) {
+  if (typeof data.output_text === "string" && data.output_text.trim()) {
+    return data.output_text;
+  }
+
+  const pieces = [];
+  for (const outputItem of data.output || []) {
+    for (const contentItem of outputItem.content || []) {
+      if (typeof contentItem.text === "string") pieces.push(contentItem.text);
+      if (typeof contentItem.value === "string") pieces.push(contentItem.value);
+    }
+  }
+  return pieces.join("\n").trim();
 }
 
 async function completeChat(messages, options = {}) {
@@ -61,32 +149,14 @@ async function completeChat(messages, options = {}) {
     throw new Error("Azure OpenAI is not configured.");
   }
 
-  const body = {
-    messages,
-    max_completion_tokens: options.maxTokens ?? 700
-  };
+  const url = getCallUrl(config);
+  const body = config.mode === "v1"
+    ? buildResponsesBody(config, messages, options)
+    : buildChatCompletionsBody(config, messages, options);
 
-  const deployment = config.deployment || "";
-  const supportsTemperature = !/^gpt-5/i.test(deployment) && !/^o\d/i.test(deployment);
-  if (supportsTemperature && options.temperature !== undefined) {
-    body.temperature = options.temperature;
-  }
-
-  if (config.mode === "v1" || config.mode === "custom") {
-    body.model = config.deployment;
-  }
-
-  if (options.responseFormat) {
-    body.response_format = options.responseFormat;
-  }
-
-  const response = await fetch(buildChatUrl(config), {
+  const response = await fetch(url, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "api-key": config.apiKey,
-      "Authorization": `Bearer ${config.apiKey}`
-    },
+    headers: buildHeaders(config),
     body: JSON.stringify(body)
   });
 
@@ -96,6 +166,10 @@ async function completeChat(messages, options = {}) {
   }
 
   const data = await response.json();
+  if (config.mode === "v1") {
+    return extractResponsesText(data);
+  }
+
   return data.choices?.[0]?.message?.content || "";
 }
 
