@@ -782,9 +782,11 @@ button {
 
 .dialogue-text {
   flex: 0 0 auto;
+  min-height: 0;
   max-height: clamp(54px, 12vh, 125px);
   margin: 0;
   overflow-y: auto;
+  scrollbar-gutter: stable;
   color: #fff4dc;
   font-size: 19px;
   line-height: 1.78;
