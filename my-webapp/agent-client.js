@@ -95,6 +95,15 @@
   window.sendReadingQuestionToAgent = async function sendReadingQuestionToAgent(payload) {
     try {
       const data = await postJson("/api/adventure/turn", payload);
+      if (data.mode && data.mode !== "azure-openai" && data.openAIError) {
+        return [
+          "AI 연결 오류가 있어서 실제 모델 답변을 받지 못했어요.",
+          "",
+          `오류: ${data.openAIError}`,
+          "",
+          "환경 변수, 배포 이름, 엔드포인트, 모델 호출 방식을 다시 확인해야 해요."
+        ].join("\n");
+      }
       return data.answer || data.message || buildPracticeAnswer(payload);
     } catch (error) {
       console.warn("[BookAdventure] Azure API unavailable. Using practice answer.", error);
