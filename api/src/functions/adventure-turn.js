@@ -18,6 +18,7 @@ app.http("adventureTurn", {
 
     let answer;
     let mode = "practice";
+    let openAIError = "";
 
     if (isOpenAIConfigured()) {
       try {
@@ -27,7 +28,8 @@ app.http("adventureTurn", {
         });
         mode = "azure-openai";
       } catch (error) {
-        context.log(`Azure OpenAI fallback: ${error.message}`);
+        openAIError = error.message;
+        context.log(`Azure OpenAI fallback: ${openAIError}`);
       }
     }
 
@@ -49,6 +51,7 @@ app.http("adventureTurn", {
     return json(200, {
       answer,
       mode,
+      openAIError: openAIError ? openAIError.slice(0, 700) : "",
       sessionId: payload.sessionId || null
     });
   }
