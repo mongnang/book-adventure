@@ -23,6 +23,14 @@ jobs:
           submodules: true
           lfs: false
 
+      - name: Prepare Static App Artifact
+        shell: bash
+        run: |
+          rm -rf swa-static-app
+          mkdir -p swa-static-app
+          cp -R my-webapp/. swa-static-app/
+          rm -rf swa-static-app/api
+
       - name: Get GitHub Id Token
         uses: actions/github-script@v8
         id: idtoken
@@ -38,7 +46,7 @@ jobs:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_CALM_BEACH_0AAA31800 }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
-          app_location: "my-webapp"
+          app_location: "swa-static-app"
           api_location: "my-webapp/api"
           output_location: ""
           skip_app_build: true
