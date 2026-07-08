@@ -2,7 +2,7 @@ const { app } = require("@azure/functions");
 const { json } = require("../shared/http");
 const { getOpenAIDiagnostics, isOpenAIConfigured } = require("../shared/openai");
 
-const BUILD_VERSION = "2026-07-08-openai-diagnostics-1";
+const BUILD_VERSION = "2026-07-08-openai-responses-1";
 
 app.http("health", {
   methods: ["GET"],
