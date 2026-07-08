@@ -17,7 +17,7 @@ function buildChatUrl(config) {
 
   const base = config.endpoint.replace(/\/+$/, "");
   if (config.mode === "v1") {
-    return `${base}/chat/completions?api-version=${encodeURIComponent(config.apiVersion)}`;
+    return `${base}/chat/completions`;
   }
 
   return `${base}/openai/deployments/${encodeURIComponent(config.deployment)}/chat/completions?api-version=${encodeURIComponent(config.apiVersion)}`;
@@ -25,6 +25,34 @@ function buildChatUrl(config) {
 
 function isOpenAIConfigured() {
   return Boolean(getOpenAIConfig());
+}
+
+function getOpenAIDiagnostics() {
+  const config = getOpenAIConfig();
+  if (!config) {
+    return {
+      configured: false,
+      hasEndpoint: Boolean(process.env.AZURE_OPENAI_ENDPOINT || process.env.AZURE_OPENAI_CHAT_URL),
+      hasApiKey: Boolean(process.env.AZURE_OPENAI_API_KEY),
+      hasDeployment: Boolean(process.env.AZURE_OPENAI_DEPLOYMENT || process.env.AZURE_OPENAI_MODEL)
+    };
+  }
+
+  let chatUrl = "";
+  try {
+    chatUrl = buildChatUrl(config);
+  } catch (error) {
+    chatUrl = "unavailable";
+  }
+
+  return {
+    configured: true,
+    mode: config.mode,
+    deployment: config.deployment || null,
+    apiVersion: config.apiVersion,
+    endpointUsesV1: Boolean(config.endpoint?.includes("/openai/v1")),
+    chatUrl
+  };
 }
 
 async function completeChat(messages, options = {}) {
@@ -35,9 +63,14 @@ async function completeChat(messages, options = {}) {
 
   const body = {
     messages,
-    temperature: options.temperature ?? 0.4,
     max_completion_tokens: options.maxTokens ?? 700
   };
+
+  const deployment = config.deployment || "";
+  const supportsTemperature = !/^gpt-5/i.test(deployment) && !/^o\d/i.test(deployment);
+  if (supportsTemperature && options.temperature !== undefined) {
+    body.temperature = options.temperature;
+  }
 
   if (config.mode === "v1" || config.mode === "custom") {
     body.model = config.deployment;
@@ -51,7 +84,8 @@ async function completeChat(messages, options = {}) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "api-key": config.apiKey
+      "api-key": config.apiKey,
+      "Authorization": `Bearer ${config.apiKey}`
     },
     body: JSON.stringify(body)
   });
@@ -67,5 +101,6 @@ async function completeChat(messages, options = {}) {
 
 module.exports = {
   completeChat,
+  getOpenAIDiagnostics,
   isOpenAIConfigured
 };
