@@ -27,6 +27,34 @@ function isOpenAIConfigured() {
   return Boolean(getOpenAIConfig());
 }
 
+function getOpenAIDiagnostics() {
+  const config = getOpenAIConfig();
+  if (!config) {
+    return {
+      configured: false,
+      hasEndpoint: Boolean(process.env.AZURE_OPENAI_ENDPOINT || process.env.AZURE_OPENAI_CHAT_URL),
+      hasApiKey: Boolean(process.env.AZURE_OPENAI_API_KEY),
+      hasDeployment: Boolean(process.env.AZURE_OPENAI_DEPLOYMENT || process.env.AZURE_OPENAI_MODEL)
+    };
+  }
+
+  let chatUrl = "";
+  try {
+    chatUrl = buildChatUrl(config);
+  } catch (error) {
+    chatUrl = "unavailable";
+  }
+
+  return {
+    configured: true,
+    mode: config.mode,
+    deployment: config.deployment || null,
+    apiVersion: config.apiVersion,
+    endpointUsesV1: Boolean(config.endpoint?.includes("/openai/v1")),
+    chatUrl
+  };
+}
+
 async function completeChat(messages, options = {}) {
   const config = getOpenAIConfig();
   if (!config) {
@@ -73,5 +101,6 @@ async function completeChat(messages, options = {}) {
 
 module.exports = {
   completeChat,
+  getOpenAIDiagnostics,
   isOpenAIConfigured
 };
