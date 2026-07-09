@@ -22,11 +22,17 @@ app.http("adventureTurn", {
 
     if (isOpenAIConfigured()) {
       try {
-        answer = await completeChat(buildTurnMessages(payload), {
+        const aiAnswer = await completeChat(buildTurnMessages(payload), {
           temperature: 0.45,
-          maxTokens: 360
+          maxTokens: 1000
         });
-        mode = "azure-openai";
+        if (aiAnswer && aiAnswer.trim()) {
+          answer = aiAnswer.trim();
+          mode = "azure-openai";
+        } else {
+          openAIError = "Azure OpenAI returned an empty answer.";
+          context.log(`Azure OpenAI fallback: ${openAIError}`);
+        }
       } catch (error) {
         openAIError = error.message;
         context.log(`Azure OpenAI fallback: ${openAIError}`);
