@@ -288,6 +288,7 @@ const answerGuessButton = document.querySelector("#answerGuessButton");
 const statusSummary = document.querySelector("#statusSummary");
 const hudBookTitle = document.querySelector("#hudBookTitle");
 const hudBookAuthor = document.querySelector("#hudBookAuthor");
+const hudQuestionText = document.querySelector("#hudQuestionText");
 const readingChat = document.querySelector("#readingChat");
 const chatTitle = document.querySelector("#chatTitle");
 const chatLog = document.querySelector("#chatLog");
@@ -810,13 +811,14 @@ function updateReadingStatus() {
   const characters = getMajorCharacters(selectedBook).join(", ");
   statusSummary.replaceChildren();
   [
-    `학생: ${getStudentLabel()}`,
-    `기회: ${adventureProgress.chancesLeft}/10`,
-    `발견한 단서: ${adventureProgress.cluesFound}`,
-    `주요 인물: ${characters}`
+    { className: "status-student", text: `학생: ${getStudentLabel()}` },
+    { className: "status-chances", text: `기회: ${adventureProgress.chancesLeft}/10` },
+    { className: "status-clues", text: `발견한 단서: ${adventureProgress.cluesFound}` },
+    { className: "status-characters", text: `주요 인물: ${characters}` }
   ].forEach((line) => {
     const item = document.createElement("span");
-    item.textContent = line;
+    item.className = line.className;
+    item.textContent = line.text;
     statusSummary.appendChild(item);
   });
   updateAnswerGuessButton();
@@ -832,6 +834,7 @@ function syncAdventureBook() {
   adventureBookAuthor.textContent = selectedBook.author;
   hudBookTitle.textContent = selectedBook.title;
   hudBookAuthor.textContent = selectedBook.author;
+  hudQuestionText.textContent = getMysteryQuestion(selectedBook);
   adventureScreen.style.setProperty("--scene-a", selectedBook.coverA);
   adventureScreen.style.setProperty("--scene-b", selectedBook.coverB);
   characterPortrait.style.setProperty("--scene-a", selectedBook.coverA);
@@ -883,9 +886,12 @@ function appendChatMessage(text, role = "agent", options = {}) {
 }
 
 function showChoiceOverlay() {
+  const isCompactAnswerMode = customInputMode === "answer";
   readingChat.classList.remove("is-hidden");
   dialogueBox.classList.add("is-question-mode");
   dialogueBox.classList.remove("is-answer-mode");
+  dialogueBox.classList.toggle("is-compact-answer-mode", isCompactAnswerMode);
+  adventureScreen.classList.toggle("is-answer-guess-mode", isCompactAnswerMode);
   toggleNextQuestionButton(false);
 }
 
@@ -893,6 +899,8 @@ function hideChoiceOverlay() {
   readingChat.classList.add("is-hidden");
   dialogueBox.classList.remove("is-question-mode");
   dialogueBox.classList.add("is-answer-mode");
+  dialogueBox.classList.remove("is-compact-answer-mode");
+  adventureScreen.classList.remove("is-answer-guess-mode");
 }
 
 function renderCategoryChoices(options = {}) {
