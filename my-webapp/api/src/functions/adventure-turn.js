@@ -24,7 +24,7 @@ app.http("adventureTurn", {
       try {
         answer = await completeChat(buildTurnMessages(payload), {
           temperature: 0.45,
-          maxTokens: 700
+          maxTokens: 360
         });
         mode = "azure-openai";
       } catch (error) {
@@ -40,9 +40,13 @@ app.http("adventureTurn", {
     await saveAdventureEvent({
       type: "questionTurn",
       sessionId: payload.sessionId,
+      student: payload.student || null,
       bookId: payload.book.id,
       categoryId: payload.category?.id || "free",
       placeName: payload.place?.name || null,
+      characterName: payload.character?.name || null,
+      progress: payload.progress || null,
+      conversation: Array.isArray(payload.conversation) ? payload.conversation.slice(-12) : [],
       question: payload.question || payload.rawQuestion,
       answer,
       mode

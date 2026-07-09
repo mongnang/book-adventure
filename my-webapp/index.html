@@ -37,6 +37,34 @@
         </button>
       </section>
 
+      <section class="profile-screen" id="profileScreen" aria-label="학생 정보 입력 화면">
+        <div class="profile-panel">
+          <p class="section-label">모험 준비</p>
+          <h2>누가 책 속으로 들어가나요?</h2>
+          <p class="profile-intro">
+            반, 번호, 닉네임을 입력하면 AI가 이번 독서 모험 기록을 같은 학생의 대화로 묶어 둘 수 있어요.
+          </p>
+
+          <form class="student-profile-form" id="studentProfileForm">
+            <label>
+              <span>반</span>
+              <input id="studentClassInput" type="text" inputmode="numeric" autocomplete="off" placeholder="예: 3" required>
+            </label>
+            <label>
+              <span>번호</span>
+              <input id="studentNumberInput" type="text" inputmode="numeric" autocomplete="off" placeholder="예: 12" required>
+            </label>
+            <label>
+              <span>닉네임</span>
+              <input id="studentNicknameInput" type="text" autocomplete="nickname" maxlength="16" placeholder="예: 달빛탐정" required>
+            </label>
+
+            <p class="profile-error is-hidden" id="studentProfileError" role="alert"></p>
+            <button type="submit">책장으로 가기</button>
+          </form>
+        </div>
+      </section>
+
       <section class="book-screen" id="bookScreen" aria-label="책 선택 화면">
         <aside class="cover-stage" aria-live="polite">
           <div class="cover-light" aria-hidden="true"></div>
@@ -137,7 +165,6 @@
     </main>
 
     <script src="./agent-client.js?v=20260707-1900"></script>
-    <script src="./app.js?v=20260708-questions-1"></script>
-    <script src="./question-copy-patch.js?v=20260708-questions-1"></script>
+    <script src="./app.js?v=20260709-questions-2"></script>
   </body>
 </html>

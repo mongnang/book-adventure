@@ -52,6 +52,7 @@ button {
 }
 
 .hero-screen,
+.profile-screen,
 .book-screen,
 .adventure-screen {
   min-height: var(--app-height);
@@ -197,6 +198,98 @@ button {
   background: currentColor;
   transform: translateX(-50%);
   animation: wheelMove 1.5s ease-in-out infinite;
+}
+
+.profile-screen {
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: clamp(36px, 7vh, 72px) clamp(18px, 5vw, 64px);
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    linear-gradient(90deg, rgba(15, 8, 5, 0.72), rgba(15, 8, 5, 0.36)),
+    url("./assets/library.png") center / cover no-repeat;
+}
+
+.profile-screen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 48% 18%, rgba(255, 216, 151, 0.22), transparent 28%),
+    linear-gradient(180deg, rgba(10, 5, 3, 0.1), rgba(10, 5, 3, 0.88));
+}
+
+.profile-panel {
+  width: min(620px, 100%);
+  padding: clamp(28px, 4vw, 44px);
+  border: 1px solid rgba(255, 229, 184, 0.28);
+  border-radius: 8px;
+  background: rgba(18, 10, 6, 0.78);
+  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.48);
+  backdrop-filter: blur(16px);
+}
+
+.profile-panel h2 {
+  margin: 0;
+  color: #fff4dc;
+  font-size: clamp(28px, 4vw, 46px);
+  line-height: 1.18;
+}
+
+.profile-intro {
+  margin: 16px 0 26px;
+  color: #f2dec2;
+  font-size: 16px;
+  line-height: 1.65;
+}
+
+.student-profile-form {
+  display: grid;
+  gap: 14px;
+}
+
+.student-profile-form label {
+  display: grid;
+  gap: 7px;
+  color: #ffe9c3;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.student-profile-form input {
+  width: 100%;
+  height: 48px;
+  border: 1px solid rgba(255, 226, 174, 0.28);
+  border-radius: 8px;
+  background: rgba(255, 246, 225, 0.1);
+  color: #fff8e7;
+  padding: 0 14px;
+  font-size: 16px;
+}
+
+.student-profile-form input::placeholder {
+  color: rgba(242, 222, 194, 0.54);
+}
+
+.profile-error {
+  margin: 2px 0 0;
+  color: #ffcfb8;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.student-profile-form button {
+  min-height: 50px;
+  margin-top: 8px;
+  border: 1px solid rgba(255, 229, 184, 0.38);
+  border-radius: 8px;
+  background: rgba(217, 175, 98, 0.2);
+  color: #ffe9c3;
+  font-weight: 900;
+  cursor: pointer;
 }
 
 .book-screen {
@@ -1082,6 +1175,7 @@ button {
 .answer-guess-button:hover,
 .back-to-books:hover,
 .next-question-button:hover,
+.student-profile-form button:hover,
 .custom-question button:hover {
   background: rgba(217, 175, 98, 0.22);
 }
@@ -1137,6 +1231,75 @@ button {
   color: #ffe4ad;
   font-weight: 800;
   cursor: pointer;
+}
+
+.assessment-card {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid rgba(255, 226, 174, 0.24);
+  border-radius: 8px;
+  background: rgba(255, 246, 225, 0.08);
+}
+
+.assessment-card h3,
+.assessment-total,
+.assessment-summary,
+.assessment-next {
+  margin: 0;
+}
+
+.assessment-card h3 {
+  color: #fff3d8;
+  font-size: 18px;
+}
+
+.assessment-total {
+  color: #ffe4ad;
+  font-size: 28px;
+  font-weight: 900;
+}
+
+.assessment-summary,
+.assessment-next {
+  color: rgba(242, 222, 194, 0.86);
+  line-height: 1.55;
+}
+
+.assessment-score-list {
+  display: grid;
+  gap: 10px;
+}
+
+.assessment-score {
+  display: grid;
+  gap: 6px;
+}
+
+.assessment-score strong {
+  color: #fff4dc;
+  font-size: 14px;
+}
+
+.assessment-score small {
+  color: rgba(242, 222, 194, 0.72);
+  line-height: 1.45;
+}
+
+.score-track {
+  display: block;
+  height: 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 246, 225, 0.14);
+}
+
+.score-bar {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #d9af62, #ffe4ad);
 }
 
 @media (max-height: 720px) {
@@ -1343,6 +1506,10 @@ button {
 
   .hero-screen {
     padding: 8vh 24px;
+  }
+
+  .profile-screen {
+    padding: 42px 18px;
   }
 
   .book-screen {

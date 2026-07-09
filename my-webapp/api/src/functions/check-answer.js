@@ -64,10 +64,13 @@ app.http("checkAnswer", {
     await saveAdventureEvent({
       type: "answerCheck",
       sessionId: payload.sessionId,
+      student: payload.student || null,
       bookId: payload.book.id,
       answer: payload.answer,
       correct: result.correct,
       message: result.message,
+      progress: payload.progress || null,
+      conversation: Array.isArray(payload.conversation) ? payload.conversation.slice(-12) : [],
       mode
     }, context);
 

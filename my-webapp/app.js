@@ -255,10 +255,19 @@ const fallbackBooks = [
 ];
 let books = [...fallbackBooks];
 
+const STUDENT_PROFILE_KEY = "book-adventure-student-profile";
+const CONVERSATION_LOG_KEY = "book-adventure-conversation-log";
+
 const heroScreen = document.querySelector("#heroScreen");
+const profileScreen = document.querySelector("#profileScreen");
 const bookScreen = document.querySelector("#bookScreen");
 const adventureScreen = document.querySelector("#adventureScreen");
 const enterControl = document.querySelector("#enterControl");
+const studentProfileForm = document.querySelector("#studentProfileForm");
+const studentClassInput = document.querySelector("#studentClassInput");
+const studentNumberInput = document.querySelector("#studentNumberInput");
+const studentNicknameInput = document.querySelector("#studentNicknameInput");
+const studentProfileError = document.querySelector("#studentProfileError");
 const shelfWindow = document.querySelector("#shelfWindow");
 const shelfRow = document.querySelector("#shelfRow");
 const selectedCover = document.querySelector("#selectedCover");
@@ -298,9 +307,9 @@ const questionCategories = [
     summary: "감정, 속마음, 마음의 변화",
     status: "마음 질문 고르기",
     questions: [
-      "이 장면에서 그 인물은 어떤 마음이었을까?",
-      "그 인물이 가장 바랐거나 두려워한 것은 무엇일까?",
-      "그 인물의 마음이 바뀐 순간은 어디였을까?"
+      "{인물명}의 주된 마음, 생각은 무엇일까?",
+      "{인물명}의 소원이나 바람은 무엇일까?",
+      "인물의 행동이나 태도가 바뀌었다면 그 이유는 무엇일까?"
     ]
   },
   {
@@ -425,6 +434,8 @@ const finalAnswerRulesByBook = {
 };
 
 let selectedBook = books[0];
+let studentProfile = loadStudentProfile();
+let conversationLog = loadConversationLog();
 let heroDragStartY = null;
 let shelfDragStartX = 0;
 let shelfScrollStart = 0;
@@ -444,6 +455,146 @@ let adventureProgress = {
   cluesFound: 0,
   solved: false
 };
+
+function readJsonStorage(key, fallback) {
+  try {
+    const value = window.localStorage.getItem(key);
+    return value ? JSON.parse(value) : fallback;
+  } catch (error) {
+    return fallback;
+  }
+}
+
+function writeJsonStorage(key, value) {
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch (error) {
+    // Local persistence is a backup; the app can continue if storage is full or blocked.
+  }
+}
+
+function loadStudentProfile() {
+  const profile = readJsonStorage(STUDENT_PROFILE_KEY, null);
+  if (!profile || typeof profile !== "object") return null;
+
+  return {
+    className: String(profile.className || "").trim(),
+    number: String(profile.number || "").trim(),
+    nickname: String(profile.nickname || "").trim()
+  };
+}
+
+function loadConversationLog() {
+  const log = readJsonStorage(CONVERSATION_LOG_KEY, []);
+  return Array.isArray(log) ? log.slice(-80) : [];
+}
+
+function isStudentProfileComplete(profile = studentProfile) {
+  return Boolean(profile?.className && profile?.number && profile?.nickname);
+}
+
+function getStudentLabel(profile = studentProfile) {
+  if (!isStudentProfileComplete(profile)) return "학생 정보 없음";
+  return `${profile.className}반 ${profile.number}번 ${profile.nickname}`;
+}
+
+function getStudentSnapshot() {
+  return isStudentProfileComplete()
+    ? {
+        className: studentProfile.className,
+        number: studentProfile.number,
+        nickname: studentProfile.nickname,
+        label: getStudentLabel()
+      }
+    : null;
+}
+
+function persistStudentProfile(profile) {
+  studentProfile = profile;
+  writeJsonStorage(STUDENT_PROFILE_KEY, studentProfile);
+}
+
+function persistConversationLog() {
+  writeJsonStorage(CONVERSATION_LOG_KEY, conversationLog.slice(-80));
+}
+
+function resetConversationLog() {
+  conversationLog = [];
+  persistConversationLog();
+}
+
+function recordConversationMessage(text, role = "agent") {
+  const entry = {
+    id: `message-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    createdAt: new Date().toISOString(),
+    student: getStudentSnapshot(),
+    bookId: selectedBook?.id || "",
+    bookTitle: selectedBook?.title || "",
+    categoryId: activeCategory?.id || "",
+    categoryTitle: activeCategory?.title || "",
+    characterName: activeCharacter?.name || "",
+    placeName: activePlace?.name || "",
+    role,
+    text: String(text || "")
+  };
+
+  conversationLog.push(entry);
+  conversationLog = conversationLog.slice(-80);
+  persistConversationLog();
+  return entry;
+}
+
+function getConversationSnapshot(limit = 12) {
+  return conversationLog.slice(-limit).map((entry) => ({
+    role: entry.role,
+    text: entry.text,
+    createdAt: entry.createdAt,
+    categoryTitle: entry.categoryTitle,
+    characterName: entry.characterName,
+    placeName: entry.placeName
+  }));
+}
+
+function getProgressSnapshot() {
+  return {
+    chancesLeft: adventureProgress.chancesLeft,
+    cluesFound: adventureProgress.cluesFound,
+    solved: adventureProgress.solved
+  };
+}
+
+function showProfileError(message) {
+  studentProfileError.textContent = message;
+  studentProfileError.classList.toggle("is-hidden", !message);
+}
+
+function hydrateStudentProfileForm() {
+  if (!studentProfileForm || !studentProfile) return;
+  studentClassInput.value = studentProfile.className || "";
+  studentNumberInput.value = studentProfile.number || "";
+  studentNicknameInput.value = studentProfile.nickname || "";
+}
+
+function readStudentProfileForm() {
+  return {
+    className: studentClassInput.value.trim(),
+    number: studentNumberInput.value.trim(),
+    nickname: studentNicknameInput.value.trim()
+  };
+}
+
+async function recordStudentSessionStart() {
+  if (typeof window.recordAdventureSessionStart !== "function") return;
+
+  try {
+    await window.recordAdventureSessionStart({
+      student: getStudentSnapshot(),
+      event: "studentProfileSubmitted"
+    });
+  } catch (error) {
+    // The local profile is enough for offline use; server storage can retry on later API turns.
+  }
+}
 
 function syncViewportMetrics() {
   const viewport = window.visualViewport;
@@ -479,7 +630,26 @@ function requestViewportSync() {
   });
 }
 
+function goToStudentProfile() {
+  activeScreenId = "profileScreen";
+  profileScreen.scrollIntoView({ behavior: "smooth", block: "start" });
+  window.setTimeout(() => {
+    if (!studentClassInput.value) {
+      studentClassInput.focus();
+    } else if (!studentNumberInput.value) {
+      studentNumberInput.focus();
+    } else {
+      studentNicknameInput.focus();
+    }
+  }, 350);
+}
+
 function goToBooks() {
+  if (!isStudentProfileComplete()) {
+    goToStudentProfile();
+    return;
+  }
+
   activeScreenId = "bookScreen";
   bookScreen.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -516,6 +686,13 @@ function getBookLocations(book) {
       clue: "인물의 말, 행동, 분위기를 함께 살펴볼 수 있는 곳"
     }
   ];
+}
+
+function formatDetailQuestion(question, category) {
+  if (category.id !== "mind") return question;
+
+  const characterName = activeCharacter?.name || "인물";
+  return question.replace(/\{인물명\}/g, characterName);
 }
 
 function setSceneCharacter(character) {
@@ -582,6 +759,7 @@ function updateReadingStatus() {
   const characters = getMajorCharacters(selectedBook).join(", ");
   statusSummary.replaceChildren();
   [
+    `학생: ${getStudentLabel()}`,
     `기회: ${adventureProgress.chancesLeft}/10`,
     `발견한 단서: ${adventureProgress.cluesFound}`,
     `주요 인물: ${characters}`
@@ -635,7 +813,7 @@ function toggleNextQuestionButton(shouldShow) {
   nextQuestionButton.classList.toggle("is-hidden", !shouldShow);
 }
 
-function appendChatMessage(text, role = "agent") {
+function appendChatMessage(text, role = "agent", options = {}) {
   const message = document.createElement("p");
   message.className = `chat-message is-${role}`;
   message.textContent = text;
@@ -646,6 +824,10 @@ function appendChatMessage(text, role = "agent") {
     setDialogue(text, "AI 독서 파트너");
   } else if (role === "user") {
     setDialogue(text, "나");
+  }
+
+  if (options.record !== false) {
+    recordConversationMessage(text, role);
   }
 }
 
@@ -819,7 +1001,8 @@ function renderDetailQuestions(categoryId) {
   showChoiceOverlay();
   setDialogue(`${targetTitle}에 대해 더 구체적으로 물어보자. 기본 질문을 고르거나 직접 질문을 써도 좋아.`, "AI 독서 파트너");
 
-  category.questions.forEach((question) => {
+  category.questions.forEach((questionTemplate) => {
+    const question = formatDetailQuestion(questionTemplate, category);
     const button = document.createElement("button");
     button.className = "detail-button";
     button.type = "button";
@@ -839,6 +1022,7 @@ function openAdventureScreen() {
     activeCharacter = null;
     activePlace = null;
     activeAdventureBookId = selectedBook.id;
+    resetConversationLog();
     resetAdventureProgress();
   }
 
@@ -847,7 +1031,7 @@ function openAdventureScreen() {
   updateReadingStatus();
 
   if (!chatLog.children.length) {
-    appendChatMessage(`「${selectedBook.title}」 속으로 들어왔어. 오늘 풀 질문은 “${getMysteryQuestion(selectedBook)}”야.`, "guide");
+    appendChatMessage(`${studentProfile?.nickname || "친구"}, 「${selectedBook.title}」 속으로 들어왔어. 오늘 풀 질문은 “${getMysteryQuestion(selectedBook)}”야.`, "guide");
   }
 
   renderCategoryChoices();
@@ -867,18 +1051,11 @@ function buildDemoAnswer({ question, category, book, character, place }) {
   const guide = guideByCategory[category.id] || "작품 속 근거를 하나씩 짚어 보면 답을 더 단단하게 만들 수 있어요.";
 
   return [
-    "좋은 질문이에요. 지금은 Copilot Studio 연결 전 데모 답변입니다.",
-    "",
-    `질문: ${question}`,
-    character ? `인물: ${character.name}` : "",
-    place ? `장소: ${place.name}` : "",
-    `책: ${book.title}`,
-    "",
+    "좋은 질문이에요. 이 단서는 그냥 넘기기 아까워요.",
+    [character ? `인물: ${character.name}` : "", place ? `장소: ${place.name}` : ""].filter(Boolean).join(" / "),
     guide,
-    "먼저 질문 속 인물이 어떤 장면에 있었는지 떠올리고, 그 장면의 말·행동·상황을 근거로 답해 보세요.",
-    "",
-    "이제 다시 ① 인물의 마음, ② 장소 돌아보기 중에서 골라 이어갈 수 있어요."
-  ].join("\n");
+    "그 장면에서 인물이 본 것, 들은 말, 한 행동 중 무엇이 가장 눈에 띄나요?"
+  ].filter(Boolean).join("\n");
 }
 
 async function requestAgentAnswer(payload) {
@@ -917,6 +1094,26 @@ async function requestAnswerCheck(payload) {
   return buildDemoAnswerCheck(payload);
 }
 
+async function requestConversationAssessment(payload) {
+  if (typeof window.assessAdventureConversation === "function") {
+    return window.assessAdventureConversation(payload);
+  }
+
+  await new Promise((resolve) => window.setTimeout(resolve, 450));
+  return {
+    totalScore: 16,
+    maxScore: 20,
+    scores: [
+      { label: "단서 찾기", score: 4, comment: "중요한 단서를 여러 번 확인했어요." },
+      { label: "근거 연결", score: 4, comment: "질문과 답을 연결하려는 흐름이 좋아요." },
+      { label: "질문 태도", score: 4, comment: "스스로 질문하며 모험을 이어 갔어요." },
+      { label: "추리 결론", score: 4, comment: "마지막 추리가 핵심에 가까웠어요." }
+    ],
+    summary: "오늘 독서 모험을 잘 마쳤어요.",
+    nextStep: "다음에는 답의 근거가 되는 장면을 한 문장으로 덧붙여 보세요."
+  };
+}
+
 function normalizeAnswerCheckResult(result) {
   if (result && typeof result === "object") {
     return {
@@ -929,6 +1126,98 @@ function normalizeAnswerCheckResult(result) {
     correct: false,
     message: String(result || "답을 확인하지 못했어요. 다시 시도해 주세요.")
   };
+}
+
+function normalizeAssessmentResult(result) {
+  const scores = Array.isArray(result?.scores) ? result.scores : [];
+
+  return {
+    totalScore: Number(result?.totalScore || scores.reduce((sum, item) => sum + Number(item.score || 0), 0)),
+    maxScore: Number(result?.maxScore || 20),
+    scores: scores.map((item) => ({
+      label: String(item.label || "평가 항목"),
+      score: Math.max(0, Math.min(5, Number(item.score || 0))),
+      comment: String(item.comment || "")
+    })),
+    summary: String(result?.summary || "독서 모험 결과를 정리했어요."),
+    nextStep: String(result?.nextStep || "다음에는 더 많은 단서를 근거로 말해 보세요.")
+  };
+}
+
+function renderAssessmentResult(assessment) {
+  clearQuestionPanel();
+  toggleCustomQuestion(false);
+  toggleNextQuestionButton(false);
+  chatTitle.textContent = "나의 독서 모험 결과";
+  showChoiceOverlay();
+
+  const card = document.createElement("article");
+  card.className = "assessment-card";
+
+  const title = document.createElement("h3");
+  title.textContent = `${getStudentLabel()}의 결과`;
+
+  const total = document.createElement("p");
+  total.className = "assessment-total";
+  total.textContent = `${assessment.totalScore}/${assessment.maxScore}점`;
+
+  const summary = document.createElement("p");
+  summary.className = "assessment-summary";
+  summary.textContent = assessment.summary;
+
+  const list = document.createElement("div");
+  list.className = "assessment-score-list";
+
+  assessment.scores.forEach((item) => {
+    const row = document.createElement("div");
+    row.className = "assessment-score";
+
+    const label = document.createElement("strong");
+    label.textContent = `${item.label} ${item.score}/5`;
+
+    const track = document.createElement("span");
+    track.className = "score-track";
+
+    const bar = document.createElement("span");
+    bar.className = "score-bar";
+    bar.style.width = `${Math.max(0, Math.min(100, (item.score / 5) * 100))}%`;
+
+    const comment = document.createElement("small");
+    comment.textContent = item.comment;
+
+    track.appendChild(bar);
+    row.append(label, track, comment);
+    list.appendChild(row);
+  });
+
+  const nextStep = document.createElement("p");
+  nextStep.className = "assessment-next";
+  nextStep.textContent = `다음 목표: ${assessment.nextStep}`;
+
+  card.append(title, total, summary, list, nextStep);
+  questionPanel.appendChild(card);
+  setDialogue("좋아, 오늘의 독서 모험 결과를 정리했어. 점수보다 중요한 건 어떤 단서를 어떻게 이어 봤는지야.", "AI 독서 파트너");
+}
+
+async function runConversationAssessment(answer) {
+  chatTitle.textContent = "결과 정리 중";
+  setDialogue("이제 오늘의 질문과 답변을 살펴보고 결과를 정리해 볼게.", "AI 독서 파트너");
+
+  const payload = {
+    student: getStudentSnapshot(),
+    book: {
+      id: selectedBook.id,
+      title: selectedBook.title,
+      author: selectedBook.author,
+      description: selectedBook.description
+    },
+    answer,
+    progress: getProgressSnapshot(),
+    conversation: getConversationSnapshot(20)
+  };
+
+  const assessment = normalizeAssessmentResult(await requestConversationAssessment(payload));
+  renderAssessmentResult(assessment);
 }
 
 function renderAnswerGuess() {
@@ -976,12 +1265,15 @@ async function submitReadingQuestion(question) {
   const selectedCharacter = activeCategory.id === "mind" ? activeCharacter : null;
   const selectedPlace = activeCategory.id === "place" ? activePlace : null;
   const questionText = selectedCharacter
-    ? `${selectedCharacter.name}의 마음: ${cleanQuestion}`
+    ? cleanQuestion.includes(selectedCharacter.name)
+      ? cleanQuestion
+      : `${selectedCharacter.name}의 마음: ${cleanQuestion}`
     : selectedPlace
       ? `${selectedPlace.name} 돌아보기: ${cleanQuestion}`
       : cleanQuestion;
 
   const payload = {
+    student: getStudentSnapshot(),
     book: {
       id: selectedBook.id,
       title: selectedBook.title,
@@ -1006,7 +1298,9 @@ async function submitReadingQuestion(question) {
       clue: selectedPlace.clue
     } : null,
     rawQuestion: cleanQuestion,
-    question: questionText
+    question: questionText,
+    progress: getProgressSnapshot(),
+    conversation: getConversationSnapshot()
   };
 
   appendChatMessage(payload.question, "user");
@@ -1016,6 +1310,8 @@ async function submitReadingQuestion(question) {
   toggleNextQuestionButton(false);
   chatTitle.textContent = "답변을 기다리는 중";
   adventureProgress.chancesLeft = Math.max(0, adventureProgress.chancesLeft - 1);
+  payload.progress = getProgressSnapshot();
+  payload.conversation = getConversationSnapshot();
   updateReadingStatus();
   setDialogue("좋아, 작품 속 장면과 인물의 단서를 잠깐 정리해 볼게.", "AI 독서 파트너");
 
@@ -1036,6 +1332,7 @@ async function submitFinalAnswer(answer) {
 
   const cleanAnswer = answer.trim();
   const payload = {
+    student: getStudentSnapshot(),
     book: {
       id: selectedBook.id,
       title: selectedBook.title,
@@ -1044,7 +1341,9 @@ async function submitFinalAnswer(answer) {
     },
     answer: cleanAnswer,
     cluesFound: adventureProgress.cluesFound,
-    majorCharacters: getMajorCharacters(selectedBook)
+    majorCharacters: getMajorCharacters(selectedBook),
+    progress: getProgressSnapshot(),
+    conversation: getConversationSnapshot()
   };
 
   appendChatMessage(`정답 시도: ${cleanAnswer}`, "user");
@@ -1054,6 +1353,8 @@ async function submitFinalAnswer(answer) {
   toggleNextQuestionButton(false);
   chatTitle.textContent = "정답 확인 중";
   adventureProgress.chancesLeft = Math.max(0, adventureProgress.chancesLeft - 1);
+  payload.progress = getProgressSnapshot();
+  payload.conversation = getConversationSnapshot();
   updateReadingStatus();
   setDialogue("정답인지 확인해 볼게. 단서와 잘 맞는지 살펴보는 중이야.", "AI 독서 파트너");
 
@@ -1067,6 +1368,7 @@ async function submitFinalAnswer(answer) {
       toggleNextQuestionButton(true);
     } else {
       toggleNextQuestionButton(false);
+      await runConversationAssessment(cleanAnswer);
     }
   } catch (error) {
     appendChatMessage("지금은 정답 확인 연결이 원활하지 않아요. 잠시 후 다시 시도해 주세요.", "agent");
@@ -1193,8 +1495,24 @@ function handleHeroPointerUp(event) {
   heroDragStartY = null;
 
   if (distance < -40 || Math.abs(distance) > 80) {
-    goToBooks();
+    goToStudentProfile();
   }
+}
+
+async function handleStudentProfileSubmit(event) {
+  event.preventDefault();
+  const profile = readStudentProfileForm();
+
+  if (!profile.className || !profile.number || !profile.nickname) {
+    showProfileError("반, 번호, 닉네임을 모두 입력해 주세요.");
+    return;
+  }
+
+  persistStudentProfile(profile);
+  showProfileError("");
+  updateReadingStatus();
+  await recordStudentSessionStart();
+  goToBooks();
 }
 
 function handleShelfPointerDown(event) {
@@ -1240,12 +1558,13 @@ function handleShelfPointerUp(event) {
   }, 0);
 }
 
-enterControl.addEventListener("click", goToBooks);
+enterControl.addEventListener("click", goToStudentProfile);
 heroScreen.addEventListener("wheel", (event) => {
-  if (event.deltaY > 12) goToBooks();
+  if (event.deltaY > 12) goToStudentProfile();
 }, { passive: true });
 heroScreen.addEventListener("pointerdown", handleHeroPointerDown);
 heroScreen.addEventListener("pointerup", handleHeroPointerUp);
+studentProfileForm.addEventListener("submit", handleStudentProfileSubmit);
 shelfWindow.addEventListener("pointerdown", handleShelfPointerDown);
 shelfWindow.addEventListener("pointermove", handleShelfPointerMove);
 shelfWindow.addEventListener("pointerup", handleShelfPointerUp);
@@ -1307,4 +1626,5 @@ window.visualViewport?.addEventListener("resize", requestViewportSync);
 window.visualViewport?.addEventListener("scroll", requestViewportSync);
 
 syncViewportMetrics();
+hydrateStudentProfileForm();
 loadBooks();
