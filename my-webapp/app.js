@@ -266,6 +266,9 @@ const adventureScreen = document.querySelector("#adventureScreen");
 const resultScreen = document.querySelector("#resultScreen");
 const resultPanel = document.querySelector("#resultPanel");
 const resultBackToBooks = document.querySelector("#resultBackToBooks");
+const screenPrevButton = document.querySelector("#screenPrevButton");
+const screenNextButton = document.querySelector("#screenNextButton");
+const screenStepLabel = document.querySelector("#screenStepLabel");
 const enterControl = document.querySelector("#enterControl");
 const studentProfileForm = document.querySelector("#studentProfileForm");
 const studentClassInput = document.querySelector("#studentClassInput");
@@ -460,6 +463,15 @@ let adventureProgress = {
   solved: false
 };
 
+const screenOrder = ["heroScreen", "profileScreen", "bookScreen", "adventureScreen", "resultScreen"];
+const screenLabels = {
+  heroScreen: "입장",
+  profileScreen: "학생 정보",
+  bookScreen: "책장",
+  adventureScreen: "모험",
+  resultScreen: "결과"
+};
+
 function readJsonStorage(key, fallback) {
   try {
     const value = window.localStorage.getItem(key);
@@ -613,30 +625,57 @@ function syncViewportMetrics() {
   root.dataset.viewportShape = width < 700 ? "narrow" : ratio > 1.8 ? "wide" : ratio < 0.85 ? "tall" : "regular";
 }
 
-function keepActiveScreenAligned() {
-  const activeScreen = document.getElementById(activeScreenId);
-  if (!activeScreen) return;
+function getScreenElements() {
+  return [heroScreen, profileScreen, bookScreen, adventureScreen, resultScreen];
+}
 
-  const rect = activeScreen.getBoundingClientRect();
-  const height = window.visualViewport?.height || window.innerHeight;
-  const screenIsCurrent = rect.top < height * 0.55 && rect.bottom > height * 0.45;
+function hasResultScreenContent() {
+  return Boolean(resultPanel?.children.length);
+}
 
-  if (screenIsCurrent && Math.abs(rect.top) > 2) {
-    activeScreen.scrollIntoView({ behavior: "auto", block: "start" });
+function canMoveNextFrom(screenId) {
+  if (screenId === "heroScreen" || screenId === "profileScreen" || screenId === "bookScreen") {
+    return true;
   }
+
+  if (screenId === "adventureScreen") {
+    return hasResultScreenContent();
+  }
+
+  return false;
+}
+
+function updateScreenNavigation() {
+  const currentIndex = screenOrder.indexOf(activeScreenId);
+  screenStepLabel.textContent = screenLabels[activeScreenId] || "";
+  screenPrevButton.disabled = currentIndex <= 0;
+  screenNextButton.disabled = !canMoveNextFrom(activeScreenId);
+}
+
+function setActiveScreen(screenId) {
+  activeScreenId = screenId;
+  getScreenElements().forEach((screen) => {
+    screen.classList.toggle("is-active-screen", screen.id === screenId);
+  });
+  document.body.dataset.activeScreen = screenId;
+  document.documentElement.dataset.activeScreen = screenId;
+  updateScreenNavigation();
 }
 
 function requestViewportSync() {
   window.cancelAnimationFrame(viewportRaf);
   viewportRaf = window.requestAnimationFrame(() => {
     syncViewportMetrics();
-    keepActiveScreenAligned();
+    updateScreenNavigation();
   });
 }
 
+function goToHero() {
+  setActiveScreen("heroScreen");
+}
+
 function goToStudentProfile() {
-  activeScreenId = "profileScreen";
-  profileScreen.scrollIntoView({ behavior: "smooth", block: "start" });
+  setActiveScreen("profileScreen");
   window.setTimeout(() => {
     if (!studentClassInput.value) {
       studentClassInput.focus();
@@ -654,18 +693,15 @@ function goToBooks() {
     return;
   }
 
-  activeScreenId = "bookScreen";
-  bookScreen.scrollIntoView({ behavior: "smooth", block: "start" });
+  setActiveScreen("bookScreen");
 }
 
 function goToAdventure() {
-  activeScreenId = "adventureScreen";
-  adventureScreen.scrollIntoView({ behavior: "smooth", block: "start" });
+  setActiveScreen("adventureScreen");
 }
 
 function goToResult() {
-  activeScreenId = "resultScreen";
-  resultScreen.scrollIntoView({ behavior: "smooth", block: "start" });
+  setActiveScreen("resultScreen");
 }
 
 function getMajorCharacters(book) {
@@ -1042,6 +1078,7 @@ function openAdventureScreen() {
   }
 
   syncAdventureBook();
+  resultPanel.innerHTML = "";
   chatStarted = true;
   updateReadingStatus();
 
@@ -1055,6 +1092,48 @@ function openAdventureScreen() {
 
 function returnToBookShelf() {
   goToBooks();
+}
+
+async function moveToNextScreen() {
+  if (activeScreenId === "heroScreen") {
+    goToStudentProfile();
+    return;
+  }
+
+  if (activeScreenId === "profileScreen") {
+    await saveStudentProfileAndGoToBooks();
+    return;
+  }
+
+  if (activeScreenId === "bookScreen") {
+    openAdventureScreen();
+    return;
+  }
+
+  if (activeScreenId === "adventureScreen" && hasResultScreenContent()) {
+    goToResult();
+  }
+}
+
+function moveToPreviousScreen() {
+  if (activeScreenId === "profileScreen") {
+    goToHero();
+    return;
+  }
+
+  if (activeScreenId === "bookScreen") {
+    goToStudentProfile();
+    return;
+  }
+
+  if (activeScreenId === "adventureScreen") {
+    goToBooks();
+    return;
+  }
+
+  if (activeScreenId === "resultScreen") {
+    goToAdventure();
+  }
 }
 
 function buildDemoAnswer({ question, category, book, character, place }) {
@@ -1642,13 +1721,12 @@ function handleHeroPointerUp(event) {
   }
 }
 
-async function handleStudentProfileSubmit(event) {
-  event.preventDefault();
+async function saveStudentProfileAndGoToBooks() {
   const profile = readStudentProfileForm();
 
   if (!profile.className || !profile.number || !profile.nickname) {
     showProfileError("반, 번호, 닉네임을 모두 입력해 주세요.");
-    return;
+    return false;
   }
 
   persistStudentProfile(profile);
@@ -1656,6 +1734,12 @@ async function handleStudentProfileSubmit(event) {
   updateReadingStatus();
   await recordStudentSessionStart();
   goToBooks();
+  return true;
+}
+
+async function handleStudentProfileSubmit(event) {
+  event.preventDefault();
+  await saveStudentProfileAndGoToBooks();
 }
 
 function handleShelfPointerDown(event) {
@@ -1701,12 +1785,9 @@ function handleShelfPointerUp(event) {
   }, 0);
 }
 
+screenPrevButton.addEventListener("click", moveToPreviousScreen);
+screenNextButton.addEventListener("click", moveToNextScreen);
 enterControl.addEventListener("click", goToStudentProfile);
-heroScreen.addEventListener("wheel", (event) => {
-  if (event.deltaY > 12) goToStudentProfile();
-}, { passive: true });
-heroScreen.addEventListener("pointerdown", handleHeroPointerDown);
-heroScreen.addEventListener("pointerup", handleHeroPointerUp);
 studentProfileForm.addEventListener("submit", handleStudentProfileSubmit);
 shelfWindow.addEventListener("pointerdown", handleShelfPointerDown);
 shelfWindow.addEventListener("pointermove", handleShelfPointerMove);
@@ -1771,4 +1852,5 @@ window.visualViewport?.addEventListener("scroll", requestViewportSync);
 
 syncViewportMetrics();
 hydrateStudentProfileForm();
+setActiveScreen(activeScreenId);
 loadBooks();

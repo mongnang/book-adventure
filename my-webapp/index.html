@@ -4,11 +4,21 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>한 권으로의 모험</title>
-    <link rel="stylesheet" href="./style.css?v=20260709-rabbit-result-1">
+    <link rel="stylesheet" href="./style.css?v=20260709-screen-arrows-1">
   </head>
   <body>
     <main class="app-shell">
-      <section class="hero-screen" id="heroScreen" aria-label="도서관 입장 화면">
+      <nav class="screen-arrow-nav" id="screenArrowNav" aria-label="화면 이동">
+        <button class="screen-arrow-button is-prev" id="screenPrevButton" type="button" aria-label="이전 화면">
+          <span aria-hidden="true">‹</span>
+        </button>
+        <span class="screen-step-label" id="screenStepLabel">입장</span>
+        <button class="screen-arrow-button is-next" id="screenNextButton" type="button" aria-label="다음 화면">
+          <span aria-hidden="true">›</span>
+        </button>
+      </nav>
+
+      <section class="hero-screen is-active-screen" id="heroScreen" aria-label="도서관 입장 화면">
         <div class="library-photo" aria-hidden="true"></div>
         <div class="library-shade" aria-hidden="true"></div>
         <div class="dust-layer" aria-hidden="true">
@@ -31,9 +41,9 @@
           </p>
         </div>
 
-        <button class="enter-control" id="enterControl" type="button" aria-label="책 선택 화면으로 이동">
-          <span class="mouse-shape" aria-hidden="true"></span>
-          <span>아래로 드래그</span>
+        <button class="enter-control" id="enterControl" type="button" aria-label="학생 정보 입력 화면으로 이동">
+          <span class="enter-arrow-shape" aria-hidden="true">›</span>
+          <span>다음 화면</span>
         </button>
       </section>
 
@@ -170,6 +180,6 @@
     </main>
 
     <script src="./agent-client.js?v=20260709-session-assessment-2"></script>
-    <script src="./app.js?v=20260709-rabbit-result-1"></script>
+    <script src="./app.js?v=20260709-screen-arrows-1"></script>
   </body>
 </html>
