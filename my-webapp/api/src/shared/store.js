@@ -32,7 +32,7 @@ async function getContainer() {
 
 async function saveAdventureEvent(event, context) {
   const container = await getContainer();
-  if (!container) return;
+  if (!container) return false;
 
   const now = new Date().toISOString();
   const sessionId = event.sessionId || "anonymous";
@@ -47,11 +47,14 @@ async function saveAdventureEvent(event, context) {
 
   try {
     await container.items.upsert(item);
+    return true;
   } catch (error) {
     context?.log?.(`Cosmos DB save skipped: ${error.message}`);
+    return false;
   }
 }
 
 module.exports = {
+  hasCosmosConfig,
   saveAdventureEvent
 };

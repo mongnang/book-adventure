@@ -257,11 +257,14 @@ let books = [...fallbackBooks];
 
 const STUDENT_PROFILE_KEY = "book-adventure-student-profile";
 const CONVERSATION_LOG_KEY = "book-adventure-conversation-log";
+const TITLE_SCENARIO_SUBMISSIONS_KEY = "book-adventure-title-scenario-submissions";
 const GUIDE_CHARACTER_IMAGE = "./assets/characters/rabbit-librarian.png";
 
 const heroScreen = document.querySelector("#heroScreen");
 const profileScreen = document.querySelector("#profileScreen");
 const bookScreen = document.querySelector("#bookScreen");
+const activityMenuScreen = document.querySelector("#activityMenuScreen");
+const scenarioScreen = document.querySelector("#scenarioScreen");
 const adventureScreen = document.querySelector("#adventureScreen");
 const resultScreen = document.querySelector("#resultScreen");
 const resultPanel = document.querySelector("#resultPanel");
@@ -284,6 +287,15 @@ const selectedDescription = document.querySelector("#selectedDescription");
 const coverTitle = document.querySelector("#coverTitle");
 const coverAuthor = document.querySelector("#coverAuthor");
 const startButton = document.querySelector("#startButton");
+const startScenarioButton = document.querySelector("#startScenarioButton");
+const startAdventureActivityButton = document.querySelector("#startAdventureActivityButton");
+const scenarioBookTitle = document.querySelector("#scenarioBookTitle");
+const scenarioChatLog = document.querySelector("#scenarioChatLog");
+const scenarioChoicePanel = document.querySelector("#scenarioChoicePanel");
+const scenarioStepForm = document.querySelector("#scenarioStepForm");
+const scenarioStepInput = document.querySelector("#scenarioStepInput");
+const scenarioStepSubmitButton = document.querySelector("#scenarioStepSubmitButton");
+const scenarioError = document.querySelector("#scenarioError");
 const answerGuessButton = document.querySelector("#answerGuessButton");
 const statusSummary = document.querySelector("#statusSummary");
 const hudBookTitle = document.querySelector("#hudBookTitle");
@@ -457,18 +469,43 @@ let customInputMode = "question";
 let chatStarted = false;
 let activeAdventureBookId = null;
 let activeScreenId = "heroScreen";
+let resultOriginScreenId = "adventureScreen";
 let viewportRaf = null;
+let titleScenarioActivity = null;
 let adventureProgress = {
   chancesLeft: 10,
   cluesFound: 0,
   solved: false
 };
 
-const screenOrder = ["heroScreen", "profileScreen", "bookScreen", "adventureScreen", "resultScreen"];
+const titleScenarioRevisionChoices = [
+  {
+    id: "adventure",
+    label: "① 더 신나고 모험 가득하게",
+    mood: "신나고 모험 가득한",
+    colors: "달빛 금색과 깊은 남색"
+  },
+  {
+    id: "warm",
+    label: "② 더 따뜻하고 감동적으로",
+    mood: "따뜻하고 감동적인",
+    colors: "부드러운 노을빛 주황과 크림색"
+  },
+  {
+    id: "twist",
+    label: "③ 깜짝 반전을 넣어서",
+    mood: "신비롭고 반전이 있는",
+    colors: "보랏빛 밤하늘과 은은한 금색"
+  }
+];
+
+const screenOrder = ["heroScreen", "profileScreen", "bookScreen", "activityMenuScreen", "scenarioScreen", "adventureScreen", "resultScreen"];
 const screenLabels = {
   heroScreen: "입장",
   profileScreen: "학생 정보",
   bookScreen: "책장",
+  activityMenuScreen: "활동 선택",
+  scenarioScreen: "활동 1",
   adventureScreen: "모험",
   resultScreen: "결과"
 };
@@ -627,7 +664,7 @@ function syncViewportMetrics() {
 }
 
 function getScreenElements() {
-  return [heroScreen, profileScreen, bookScreen, adventureScreen, resultScreen];
+  return [heroScreen, profileScreen, bookScreen, activityMenuScreen, scenarioScreen, adventureScreen, resultScreen];
 }
 
 function hasResultScreenContent() {
@@ -697,12 +734,513 @@ function goToBooks() {
   setActiveScreen("bookScreen");
 }
 
+function goToActivityMenu() {
+  if (!isStudentProfileComplete()) {
+    goToStudentProfile();
+    return;
+  }
+
+  scenarioBookTitle.textContent = selectedBook.title;
+  setActiveScreen("activityMenuScreen");
+}
+
+function goToScenario() {
+  scenarioBookTitle.textContent = selectedBook.title;
+  startTitleScenarioActivity();
+  setActiveScreen("scenarioScreen");
+  window.setTimeout(() => scenarioStepInput.focus(), 250);
+}
+
 function goToAdventure() {
   setActiveScreen("adventureScreen");
 }
 
 function goToResult() {
   setActiveScreen("resultScreen");
+}
+
+function createTitleScenarioState(book = selectedBook) {
+  return {
+    bookId: book.id,
+    bookTitle: book.title,
+    stage: "character",
+    answers: {
+      character: "",
+      setting: "",
+      event: ""
+    },
+    messages: [],
+    scenario: "",
+    prompt: null,
+    revisionCount: 0,
+    lastRevisionId: ""
+  };
+}
+
+function showScenarioError(message) {
+  scenarioError.textContent = message;
+  scenarioError.classList.toggle("is-hidden", !message);
+}
+
+function createTextElement(tagName, className, text) {
+  const element = document.createElement(tagName);
+  if (className) element.className = className;
+  element.textContent = text;
+  return element;
+}
+
+function getTitleScenarioQuestion(stage) {
+  if (stage === "character") {
+    return "등장인물부터 상상해 보자. 누가 나올 것 같아?";
+  }
+
+  if (stage === "setting") {
+    return "좋아. 이번에는 배경을 정해 보자. 어디서, 언제 일어나는 이야기일까?";
+  }
+
+  return "마지막으로, 그곳에서 어떤 일이 벌어질 것 같아?";
+}
+
+function getTitleScenarioHint(stage) {
+  if (stage === "character") {
+    return "예를 들면 길을 잃은 아이, 비밀을 아는 사서, 밤마다 책장을 지키는 친구처럼 써도 좋아.";
+  }
+
+  if (stage === "setting") {
+    return "예를 들면 오래된 마을, 달빛이 비치는 도서관, 미래 도시, 비 오는 산길처럼 장소와 때를 같이 적어도 좋아.";
+  }
+
+  return "예를 들면 사라진 편지를 찾는다, 이상한 문이 열린다, 오래된 약속을 지킨다처럼 사건을 한 문장으로 써 봐.";
+}
+
+function isHelpRequest(text) {
+  return /모르|어려|예시|힌트|도움/.test(text);
+}
+
+function appendTitleScenarioMessage(role, text) {
+  if (!titleScenarioActivity) return;
+  titleScenarioActivity.messages.push({
+    role,
+    text: String(text || ""),
+    createdAt: new Date().toISOString()
+  });
+}
+
+function renderTitleScenarioLog() {
+  scenarioChatLog.innerHTML = "";
+
+  titleScenarioActivity.messages.forEach((message) => {
+    const item = document.createElement("div");
+    item.className = `scenario-message is-${message.role === "user" ? "user" : "guide"}`;
+    item.textContent = message.text;
+    scenarioChatLog.appendChild(item);
+  });
+
+  scenarioChatLog.scrollTop = scenarioChatLog.scrollHeight;
+}
+
+function renderTitleScenarioChoices() {
+  scenarioChoicePanel.innerHTML = "";
+
+  if (!titleScenarioActivity || (titleScenarioActivity.stage !== "review" && titleScenarioActivity.stage !== "final")) {
+    scenarioChoicePanel.classList.add("is-hidden");
+    return;
+  }
+
+  scenarioChoicePanel.classList.remove("is-hidden");
+
+  if (titleScenarioActivity.stage === "final") {
+    const resultButton = document.createElement("button");
+    resultButton.type = "button";
+    resultButton.className = "scenario-choice-button is-primary";
+    resultButton.dataset.scenarioAction = "showResult";
+    resultButton.textContent = "결과 다시 보기";
+
+    const restartButton = document.createElement("button");
+    restartButton.type = "button";
+    restartButton.className = "scenario-choice-button";
+    restartButton.dataset.scenarioAction = "restart";
+    restartButton.textContent = "처음부터 다시 하기";
+
+    scenarioChoicePanel.append(resultButton, restartButton);
+    return;
+  }
+
+  titleScenarioRevisionChoices.forEach((choice) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "scenario-choice-button";
+    button.dataset.scenarioAction = "revise";
+    button.dataset.revisionId = choice.id;
+    button.textContent = choice.label;
+    scenarioChoicePanel.appendChild(button);
+  });
+
+  const confirmButton = document.createElement("button");
+  confirmButton.type = "button";
+  confirmButton.className = "scenario-choice-button is-primary";
+  confirmButton.dataset.scenarioAction = "finalize";
+  confirmButton.textContent = "이거 좋아! 확정하기";
+  scenarioChoicePanel.appendChild(confirmButton);
+}
+
+function renderTitleScenarioActivity() {
+  if (!titleScenarioActivity) return;
+
+  renderTitleScenarioLog();
+  renderTitleScenarioChoices();
+  showScenarioError("");
+
+  if (titleScenarioActivity.stage === "final") {
+    scenarioStepInput.value = "";
+    scenarioStepInput.disabled = true;
+    scenarioStepSubmitButton.disabled = true;
+    scenarioStepInput.placeholder = "이미 확정한 결과는 결과 화면에서 볼 수 있어요.";
+    scenarioStepSubmitButton.textContent = "완료";
+    return;
+  }
+
+  if (titleScenarioActivity.stage === "review") {
+    scenarioStepInput.disabled = false;
+    scenarioStepSubmitButton.disabled = false;
+    scenarioStepInput.placeholder = "직접 바꾸고 싶은 점을 써도 좋아요.";
+    scenarioStepSubmitButton.textContent = "고쳐 쓰기";
+    return;
+  }
+
+  scenarioStepInput.disabled = false;
+  scenarioStepSubmitButton.disabled = false;
+  scenarioStepInput.placeholder = "생각을 한 문장으로 써 보세요.";
+  scenarioStepSubmitButton.textContent = "보내기";
+}
+
+function startTitleScenarioActivity({ restart = false } = {}) {
+  if (!titleScenarioActivity || titleScenarioActivity.bookId !== selectedBook.id || restart) {
+    titleScenarioActivity = createTitleScenarioState(selectedBook);
+    appendTitleScenarioMessage(
+      "guide",
+      `오늘 상상할 책의 제목은 「${selectedBook.title}」이야. 제목만 보고 어떤 이야기일지 같이 상상해 볼까?`
+    );
+    appendTitleScenarioMessage("guide", getTitleScenarioQuestion("character"));
+  }
+
+  renderTitleScenarioActivity();
+}
+
+function buildTitleScenarioText() {
+  const { character, setting, event } = titleScenarioActivity.answers;
+  const title = selectedBook.title;
+
+  return [
+    `「${title}」라는 제목을 들으면, ${setting}에서 ${character}이(가) 조용한 변화를 만나는 장면이 떠올라요.`,
+    `그곳에서는 ${event} 일이 벌어지고, 처음에는 아무도 그 일을 크게 여기지 않아요.`,
+    `하지만 ${character}은(는) 작은 단서 하나를 발견하고, 그 단서가 제목 속 말과 이어져 있다는 것을 느껴요.`,
+    `이야기가 깊어질수록 평범해 보이던 장소가 비밀을 품은 공간처럼 보이기 시작해요.`,
+    `${character}은(는) 두려움과 궁금함 사이에서 망설이지만, 결국 스스로 답을 찾아 나서요.`,
+    `마지막에는 제목의 뜻이 새롭게 다가오고, 독자는 처음과는 다른 마음으로 그 장면을 바라보게 돼요.`
+  ].join(" ");
+}
+
+function buildRevisedTitleScenarioText(revisionId, customRequest = "") {
+  const { character, setting, event } = titleScenarioActivity.answers;
+  const title = selectedBook.title;
+
+  if (revisionId === "adventure") {
+    return [
+      `「${title}」 속 ${character}은(는) ${setting}에서 ${event} 일이 시작되자 곧바로 단서를 따라 달려가요.`,
+      `낡은 표식과 이상한 소리가 길을 열고, 한 장면이 끝날 때마다 새로운 선택이 나타나요.`,
+      `${character}은(는) 겁이 나도 멈추지 않고, 제목 속에 숨은 장소를 찾아 한 걸음씩 나아가요.`,
+      `가장 위험한 순간에는 처음에 지나쳤던 작은 단서가 길을 밝혀 줘요.`,
+      `마침내 비밀의 문이 열리고, ${character}은(는) 자신이 상상보다 더 용감하다는 것을 알게 돼요.`,
+      `이 표지는 달빛 아래 펼쳐진 모험의 첫 장면처럼 그려지면 잘 어울려요.`
+    ].join(" ");
+  }
+
+  if (revisionId === "warm") {
+    return [
+      `「${title}」는 ${setting}에서 ${character}이(가) 잊고 있던 마음을 되찾는 이야기로 펼쳐져요.`,
+      `${event} 일이 벌어지면서 모두가 조금씩 흔들리지만, 서로를 걱정하는 마음도 함께 드러나요.`,
+      `${character}은(는) 누군가의 작은 말과 따뜻한 행동을 통해 제목의 의미를 새롭게 느껴요.`,
+      `큰 사건보다 조용한 눈빛, 손을 내미는 순간, 함께 걷는 길이 더 오래 남아요.`,
+      `마지막에는 모든 문제가 완벽히 사라지지는 않아도, 서로를 이해하려는 마음이 남아요.`,
+      `이 표지는 부드러운 빛 속에서 인물들이 한 장면에 머무는 느낌이면 잘 어울려요.`
+    ].join(" ");
+  }
+
+  if (revisionId === "twist") {
+    return [
+      `「${title}」에서 ${character}은(는) ${setting}에 숨겨진 이상한 규칙을 발견해요.`,
+      `${event} 일은 처음에는 우연처럼 보이지만, 사실 누군가 오래전부터 남겨 둔 신호였어요.`,
+      `${character}이(가) 단서를 모을수록 믿었던 사실이 하나씩 뒤집히고, 제목도 전혀 다른 뜻으로 보이기 시작해요.`,
+      `가장 평범해 보이던 인물이 뜻밖의 열쇠를 쥐고 있다는 사실이 드러나요.`,
+      `마지막 장면에서는 처음 문장으로 돌아가야만 비밀이 풀리는 반전이 생겨요.`,
+      `이 표지는 어둡지만 아름다운 색감과 의미심장한 표정이 살아 있으면 잘 어울려요.`
+    ].join(" ");
+  }
+
+  return [
+    `「${title}」는 ${setting}에서 ${character}이(가) ${event} 일을 마주하며 시작돼요.`,
+    `학생이 덧붙인 방향은 “${customRequest}”이므로, 이야기의 분위기도 그쪽으로 조금 더 기울어져요.`,
+    `${character}은(는) 사건 속에서 그냥 지나칠 수 없는 단서를 발견하고, 제목에 숨은 의미를 생각하게 돼요.`,
+    `주변 인물과 장소는 그 선택을 더 어렵게 만들지만, 동시에 앞으로 나아갈 힘도 줘요.`,
+    `마지막에는 처음 떠올린 상상보다 더 분명한 장면이 남고, 표지로 그리고 싶은 순간도 또렷해져요.`,
+    `이제 이 이야기를 바탕으로 책 표지를 만들 수 있어요.`
+  ].join(" ");
+}
+
+function handleTitleScenarioAnswer(answer) {
+  const cleanAnswer = answer.trim();
+  if (!cleanAnswer) {
+    showScenarioError("생각을 한 문장으로 적어 주세요.");
+    return;
+  }
+
+  if (isHelpRequest(cleanAnswer)) {
+    appendTitleScenarioMessage("guide", getTitleScenarioHint(titleScenarioActivity.stage));
+    scenarioStepInput.value = "";
+    renderTitleScenarioActivity();
+    return;
+  }
+
+  appendTitleScenarioMessage("user", cleanAnswer);
+
+  if (titleScenarioActivity.stage === "character") {
+    titleScenarioActivity.answers.character = cleanAnswer;
+    titleScenarioActivity.stage = "setting";
+    appendTitleScenarioMessage("guide", getTitleScenarioQuestion("setting"));
+  } else if (titleScenarioActivity.stage === "setting") {
+    titleScenarioActivity.answers.setting = cleanAnswer;
+    titleScenarioActivity.stage = "event";
+    appendTitleScenarioMessage("guide", getTitleScenarioQuestion("event"));
+  } else if (titleScenarioActivity.stage === "event") {
+    titleScenarioActivity.answers.event = cleanAnswer;
+    titleScenarioActivity.scenario = buildTitleScenarioText();
+    titleScenarioActivity.stage = "review";
+    appendTitleScenarioMessage("guide", "좋아. 네가 상상한 세 가지를 살려서 짧은 가상 줄거리로 만들어 봤어.");
+    appendTitleScenarioMessage("guide", titleScenarioActivity.scenario);
+    appendTitleScenarioMessage("guide", "이 이야기를 어떻게 바꿔볼까? 아래 보기에서 고르거나, 직접 바꾸고 싶은 점을 써 줘.");
+  }
+
+  scenarioStepInput.value = "";
+  renderTitleScenarioActivity();
+}
+
+function reviseTitleScenario(revisionId, customRequest = "") {
+  const choice = titleScenarioRevisionChoices.find((item) => item.id === revisionId);
+  const label = choice?.label || customRequest;
+
+  if (!label) {
+    showScenarioError("바꾸고 싶은 방향을 골라 주세요.");
+    return;
+  }
+
+  titleScenarioActivity.revisionCount += 1;
+  titleScenarioActivity.lastRevisionId = revisionId || "custom";
+  appendTitleScenarioMessage("user", label);
+  titleScenarioActivity.scenario = buildRevisedTitleScenarioText(revisionId, customRequest);
+  appendTitleScenarioMessage("guide", "좋아. 그 방향으로 다시 고쳐 쓴 시나리오야.");
+  appendTitleScenarioMessage("guide", titleScenarioActivity.scenario);
+  appendTitleScenarioMessage("guide", "마음에 들면 확정하고, 더 바꾸고 싶으면 다시 골라 줘.");
+  scenarioStepInput.value = "";
+  renderTitleScenarioActivity();
+}
+
+function normalizePromptPart(text, maxLength = 180) {
+  const value = String(text || "").replace(/\s+/g, " ").trim();
+  return value.length > maxLength ? `${value.slice(0, maxLength - 3)}...` : value;
+}
+
+function buildNanoBananaPrompt() {
+  const revision = titleScenarioRevisionChoices.find((choice) => choice.id === titleScenarioActivity.lastRevisionId);
+  const mood = revision?.mood || "따뜻하고 신비로운";
+  const colors = revision?.colors || "달빛 금색, 짙은 갈색, 부드러운 크림색";
+  const { character, setting, event } = titleScenarioActivity.answers;
+  const scene = `${setting}에서 ${character}이(가) ${event} 일의 단서를 마주하는 장면`;
+  const title = selectedBook.title;
+
+  return {
+    mood,
+    scene,
+    colors,
+    ko: [
+      "[한국어 설명]",
+      `- 분위기: ${mood}`,
+      `- 그림 내용: ${scene}. ${normalizePromptPart(titleScenarioActivity.scenario, 150)}`,
+      `- 색감: ${colors}`,
+      `- 표지에 넣을 제목 글자: "${title}"`
+    ].join("\n"),
+    en: `A book cover illustration of ${normalizePromptPart(scene, 120)}, ${mood}, ${colors}, with the title text "${title}" in an elegant storybook lettering style, children's book art.`
+  };
+}
+
+function saveTitleScenarioSubmissionLocally(payload) {
+  const saved = readJsonStorage(TITLE_SCENARIO_SUBMISSIONS_KEY, []);
+  const submissions = Array.isArray(saved) ? saved : [];
+  const nextItem = {
+    id: `title-scenario-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    savedAt: new Date().toISOString(),
+    ...payload
+  };
+  submissions.push(nextItem);
+  writeJsonStorage(TITLE_SCENARIO_SUBMISSIONS_KEY, submissions.slice(-120));
+  return nextItem;
+}
+
+function buildTitleScenarioSubmissionPayload() {
+  return {
+    activityId: "title-scenario",
+    student: getStudentSnapshot(),
+    book: {
+      id: selectedBook.id,
+      title: selectedBook.title,
+      author: selectedBook.author
+    },
+    answers: { ...titleScenarioActivity.answers },
+    scenarioText: titleScenarioActivity.scenario,
+    nanoBananaPrompt: titleScenarioActivity.prompt,
+    promptKo: titleScenarioActivity.prompt?.ko || "",
+    promptEn: titleScenarioActivity.prompt?.en || "",
+    conversation: titleScenarioActivity.messages.slice(-30),
+    revisionCount: titleScenarioActivity.revisionCount,
+    createdAt: new Date().toISOString()
+  };
+}
+
+async function submitTitleScenarioForTeacher(statusElement, button) {
+  const payload = buildTitleScenarioSubmissionPayload();
+  button.disabled = true;
+  statusElement.textContent = "제출하는 중이에요.";
+
+  try {
+    const result = typeof window.submitTitleScenarioToTeacher === "function"
+      ? await window.submitTitleScenarioToTeacher(payload)
+      : { ...saveTitleScenarioSubmissionLocally(payload), storage: "browser-local-storage", localSaved: true };
+
+    if (result?.saved && result.storage === "cosmos-db") {
+      statusElement.textContent = "제출 완료. 선생님용 데이터 저장소에 기록됐어요.";
+    } else if (result?.localSaved || result?.storage === "browser-local-storage") {
+      statusElement.textContent = "서버 저장소가 아직 연결되지 않아 이 기기 브라우저에 임시 저장했어요.";
+    } else {
+      statusElement.textContent = "서버가 받았지만 저장소 설정이 비어 있어요. 관리자 설정을 확인해 주세요.";
+    }
+  } catch (error) {
+    saveTitleScenarioSubmissionLocally(payload);
+    statusElement.textContent = "서버 연결이 불안정해서 이 기기 브라우저에 임시 저장했어요.";
+  } finally {
+    button.disabled = false;
+  }
+}
+
+function renderTitleScenarioResult() {
+  if (titleScenarioActivity.stage !== "final") {
+    appendTitleScenarioMessage(
+      "guide",
+      `멋진 상상 이야기가 완성됐어. 이제 「${selectedBook.title}」 표지 그림 프롬프트를 결과 화면에서 확인해 보자.`
+    );
+  }
+  titleScenarioActivity.prompt = buildNanoBananaPrompt();
+  titleScenarioActivity.stage = "final";
+  resultOriginScreenId = "scenarioScreen";
+  resultPanel.innerHTML = "";
+
+  const card = document.createElement("article");
+  card.className = "scenario-result-card";
+
+  const content = document.createElement("div");
+  content.className = "scenario-result-content";
+
+  const header = document.createElement("header");
+  header.className = "scenario-result-header";
+  header.append(
+    createTextElement("p", "section-label", "활동 1 결과"),
+    createTextElement("h3", "", `${getStudentLabel()}의 표지 상상 결과`),
+    createTextElement("p", "scenario-result-book", `책 제목: ${selectedBook.title}`)
+  );
+
+  const scenarioBox = document.createElement("section");
+  scenarioBox.className = "scenario-result-box";
+  scenarioBox.append(
+    createTextElement("strong", "", "확정한 가상 시나리오"),
+    createTextElement("p", "", titleScenarioActivity.scenario)
+  );
+
+  const promptGrid = document.createElement("section");
+  promptGrid.className = "scenario-prompt-grid";
+
+  const koPrompt = document.createElement("div");
+  koPrompt.className = "scenario-prompt-box";
+  koPrompt.append(createTextElement("strong", "", "나노바나나 프롬프트"), createTextElement("pre", "", titleScenarioActivity.prompt.ko));
+
+  const enPrompt = document.createElement("div");
+  enPrompt.className = "scenario-prompt-box";
+  enPrompt.append(createTextElement("strong", "", "English Prompt"), createTextElement("pre", "", titleScenarioActivity.prompt.en));
+
+  promptGrid.append(koPrompt, enPrompt);
+
+  const submitRow = document.createElement("div");
+  submitRow.className = "scenario-submit-row";
+
+  const submitButton = document.createElement("button");
+  submitButton.type = "button";
+  submitButton.className = "scenario-submit-button";
+  submitButton.textContent = "선생님께 제출";
+
+  const status = createTextElement("p", "scenario-submit-status", "아직 제출하지 않았어요.");
+  submitButton.addEventListener("click", () => submitTitleScenarioForTeacher(status, submitButton));
+
+  submitRow.append(submitButton, status);
+  content.append(header, scenarioBox, promptGrid, submitRow);
+
+  const librarian = document.createElement("div");
+  librarian.className = "scenario-result-librarian";
+  librarian.setAttribute("aria-label", "토끼 사서 캐릭터");
+
+  const librarianFrame = document.createElement("div");
+  librarianFrame.className = "scenario-result-librarian-frame";
+  librarian.appendChild(librarianFrame);
+
+  card.append(content, librarian);
+  resultPanel.appendChild(card);
+  goToResult();
+}
+
+function handleTitleScenarioFormSubmit(event) {
+  event.preventDefault();
+  if (!titleScenarioActivity) startTitleScenarioActivity();
+
+  const answer = scenarioStepInput.value.trim();
+  if (titleScenarioActivity.stage === "review") {
+    reviseTitleScenario("custom", answer);
+    return;
+  }
+
+  handleTitleScenarioAnswer(answer);
+}
+
+function handleTitleScenarioChoiceClick(event) {
+  const button = event.target.closest("[data-scenario-action]");
+  if (!button) return;
+
+  const action = button.dataset.scenarioAction;
+  if (action === "finalize") {
+    renderTitleScenarioResult();
+    return;
+  }
+
+  if (action === "showResult") {
+    renderTitleScenarioResult();
+    return;
+  }
+
+  if (action === "restart") {
+    startTitleScenarioActivity({ restart: true });
+    scenarioStepInput.focus();
+    return;
+  }
+
+  if (action === "revise") {
+    reviseTitleScenario(button.dataset.revisionId);
+  }
 }
 
 function getMajorCharacters(book) {
@@ -1114,7 +1652,7 @@ async function moveToNextScreen() {
   }
 
   if (activeScreenId === "bookScreen") {
-    openAdventureScreen();
+    goToActivityMenu();
     return;
   }
 
@@ -1134,13 +1672,27 @@ function moveToPreviousScreen() {
     return;
   }
 
-  if (activeScreenId === "adventureScreen") {
+  if (activeScreenId === "activityMenuScreen") {
     goToBooks();
     return;
   }
 
+  if (activeScreenId === "scenarioScreen") {
+    goToActivityMenu();
+    return;
+  }
+
+  if (activeScreenId === "adventureScreen") {
+    goToActivityMenu();
+    return;
+  }
+
   if (activeScreenId === "resultScreen") {
-    goToAdventure();
+    if (resultOriginScreenId === "scenarioScreen") {
+      goToScenario();
+    } else {
+      goToAdventure();
+    }
   }
 }
 
@@ -1196,24 +1748,77 @@ async function requestAnswerCheck(payload) {
   return buildDemoAnswerCheck(payload);
 }
 
+function buildLocalAssessmentNextStep(payload = {}) {
+  const conversation = Array.isArray(payload.conversation) ? payload.conversation : [];
+  const userTurns = conversation.filter((entry) => entry.role === "user").length;
+  const cluesFound = Number(payload.progress?.cluesFound || payload.cluesFound || 0);
+  const solved = Boolean(payload.progress?.solved || payload.correct);
+  const answer = String(payload.answer || "").trim();
+  const bookTitle = payload.book?.title || selectedBook?.title || "이 책";
+
+  if (!userTurns) {
+    return "다음에는 먼저 인물 질문이나 장소 질문을 하나 골라 단서를 모아 보세요.";
+  }
+
+  if (!solved && cluesFound < 2) {
+    return "다음에는 인물의 마음 질문과 장소 질문을 각각 하나씩 골라 단서를 비교해 보세요.";
+  }
+
+  if (!solved) {
+    return "다음에는 모은 단서 중 가장 중요한 장면 하나를 골라 결론과 연결해 보세요.";
+  }
+
+  if (answer) {
+    return `다음에는 「${bookTitle}」에서 그 답을 떠올리게 한 장면을 한 문장으로 덧붙여 보세요.`;
+  }
+
+  return `다음에는 「${bookTitle}」의 결론을 말하기 전에 가장 결정적인 단서를 먼저 짚어 보세요.`;
+}
+
+function buildLocalAssessment(payload = {}) {
+  const conversation = Array.isArray(payload.conversation) ? payload.conversation : [];
+  const userTurns = conversation.filter((entry) => entry.role === "user").length;
+  const cluesFound = Number(payload.progress?.cluesFound || payload.cluesFound || 0);
+  const solved = Boolean(payload.progress?.solved || payload.correct);
+  const inquiryScore = Math.min(5, Math.max(2, userTurns + Math.min(2, cluesFound)));
+  const conclusionScore = solved ? 5 : Math.min(4, Math.max(2, cluesFound + 1));
+  const scores = [
+    {
+      id: "inquiry",
+      label: "질문 태도",
+      score: inquiryScore,
+      comment: userTurns > 2
+        ? "스스로 질문을 이어 가며 단서를 확인하려는 태도가 좋아요."
+        : "질문을 조금 더 이어 가면 인물과 장소 단서를 더 넓게 볼 수 있어요."
+    },
+    {
+      id: "conclusion",
+      label: "추리 결론",
+      score: conclusionScore,
+      comment: solved
+        ? "마지막 추리가 핵심 단서와 잘 이어졌어요."
+        : "결론을 말할 때 가장 중요한 장면을 함께 붙이면 더 단단해져요."
+    }
+  ];
+
+  return {
+    totalScore: scores.reduce((sum, item) => sum + item.score, 0),
+    maxScore: 10,
+    scores,
+    summary: solved
+      ? "오늘은 질문으로 단서를 모으고 마지막 결론까지 잘 이어 갔어요."
+      : "오늘은 질문으로 단서를 모으는 흐름을 따라왔고, 결론을 더 단단하게 만들 준비가 되었어요.",
+    nextStep: buildLocalAssessmentNextStep(payload)
+  };
+}
+
 async function requestConversationAssessment(payload) {
   if (typeof window.assessAdventureConversation === "function") {
     return window.assessAdventureConversation(payload);
   }
 
   await new Promise((resolve) => window.setTimeout(resolve, 450));
-  return {
-    totalScore: 16,
-    maxScore: 20,
-    scores: [
-      { label: "단서 찾기", score: 4, comment: "중요한 단서를 여러 번 확인했어요." },
-      { label: "근거 연결", score: 4, comment: "질문과 답을 연결하려는 흐름이 좋아요." },
-      { label: "질문 태도", score: 4, comment: "스스로 질문하며 모험을 이어 갔어요." },
-      { label: "추리 결론", score: 4, comment: "마지막 추리가 핵심에 가까웠어요." }
-    ],
-    summary: "오늘 독서 모험을 잘 마쳤어요.",
-    nextStep: "다음에는 답의 근거가 되는 장면을 한 문장으로 덧붙여 보세요."
-  };
+  return buildLocalAssessment(payload);
 }
 
 function normalizeAnswerCheckResult(result) {
@@ -1235,7 +1840,7 @@ function normalizeAssessmentResult(result) {
 
   return {
     totalScore: Number(result?.totalScore || scores.reduce((sum, item) => sum + Number(item.score || 0), 0)),
-    maxScore: Number(result?.maxScore || 20),
+    maxScore: Number(result?.maxScore || Math.max(10, scores.length * 5)),
     scores: scores.map((item) => ({
       label: String(item.label || "평가 항목"),
       score: Math.max(0, Math.min(5, Number(item.score || 0))),
@@ -1252,6 +1857,7 @@ function renderAssessmentResult(assessment) {
   toggleNextQuestionButton(false);
   chatTitle.textContent = "나의 독서 모험 결과";
   hideChoiceOverlay();
+  resultOriginScreenId = "adventureScreen";
   resultPanel.innerHTML = "";
 
   const card = document.createElement("article");
@@ -1470,10 +2076,10 @@ function renderAnswerGuess() {
 
   const note = document.createElement("p");
   note.className = "answer-guess-note";
-  note.textContent = "지금까지 찾은 단서를 바탕으로 최종 정답을 입력해 보세요.";
+  note.textContent = "지금까지 찾은 단서를 바탕으로 최종 정답과 그렇게 생각한 이유를 한 문장으로 함께 써 보세요.";
   questionPanel.appendChild(note);
 
-  customQuestionInput.placeholder = "내가 찾은 정답 입력";
+  customQuestionInput.placeholder = "예: 동이는 허 생원의 아들인 것 같아요. 왜냐하면 ...";
   customQuestionInput.focus();
   setDialogue("좋아, 이제 정답을 맞춰볼 차례야. 단서들을 떠올리면서 조심스럽게 적어봐.", "AI 독서 파트너");
 }
@@ -1646,6 +2252,7 @@ function selectBook(bookId) {
   selectedTitle.textContent = nextBook.title;
   selectedAuthor.textContent = nextBook.author;
   selectedDescription.textContent = nextBook.description;
+  scenarioBookTitle.textContent = nextBook.title;
   updateReadingStatus();
   if (activeAdventureBookId === nextBook.id) {
     syncAdventureBook();
@@ -1852,7 +2459,11 @@ backToBooks.addEventListener("click", returnToBookShelf);
 resultBackToBooks.addEventListener("click", returnToBookShelf);
 answerGuessButton.addEventListener("click", renderAnswerGuess);
 nextQuestionButton.addEventListener("click", () => renderCategoryChoices({ updateDialogue: false }));
-startButton.addEventListener("click", openAdventureScreen);
+startButton.addEventListener("click", goToActivityMenu);
+startScenarioButton.addEventListener("click", goToScenario);
+startAdventureActivityButton.addEventListener("click", openAdventureScreen);
+scenarioStepForm.addEventListener("submit", handleTitleScenarioFormSubmit);
+scenarioChoicePanel.addEventListener("click", handleTitleScenarioChoiceClick);
 window.addEventListener("resize", requestViewportSync);
 window.addEventListener("orientationchange", requestViewportSync);
 window.visualViewport?.addEventListener("resize", requestViewportSync);

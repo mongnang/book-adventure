@@ -1,5 +1,6 @@
 (function () {
   const SESSION_KEY = "book-adventure-session-id";
+  const TITLE_SCENARIO_SUBMISSIONS_KEY = "book-adventure-title-scenario-submissions";
 
   const finalAnswerRules = {
     memil: {
@@ -86,44 +87,90 @@
         };
   }
 
+  function readJsonStorage(key, fallback) {
+    try {
+      const value = window.localStorage.getItem(key);
+      return value ? JSON.parse(value) : fallback;
+    } catch (error) {
+      return fallback;
+    }
+  }
+
+  function writeJsonStorage(key, value) {
+    try {
+      window.localStorage.setItem(key, JSON.stringify(value));
+    } catch (error) {
+      // Server storage is preferred; local storage is only a backup.
+    }
+  }
+
+  function saveTitleScenarioSubmissionLocally(payload) {
+    const saved = readJsonStorage(TITLE_SCENARIO_SUBMISSIONS_KEY, []);
+    const submissions = Array.isArray(saved) ? saved : [];
+    const item = {
+      id: `title-scenario-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      savedAt: new Date().toISOString(),
+      ...payload
+    };
+    submissions.push(item);
+    writeJsonStorage(TITLE_SCENARIO_SUBMISSIONS_KEY, submissions.slice(-120));
+    return item;
+  }
+
+  function buildPracticeNextStep(payload = {}) {
+    const conversation = Array.isArray(payload.conversation) ? payload.conversation : [];
+    const userTurns = conversation.filter((entry) => entry.role === "user").length;
+    const cluesFound = Number(payload.progress?.cluesFound || payload.cluesFound || 0);
+    const solved = Boolean(payload.progress?.solved || payload.correct);
+    const bookTitle = payload.book?.title || "이 책";
+
+    if (!userTurns) {
+      return "다음에는 먼저 인물 질문이나 장소 질문을 하나 골라 단서를 모아 보세요.";
+    }
+
+    if (!solved && cluesFound < 2) {
+      return "다음에는 인물의 마음 질문과 장소 질문을 각각 하나씩 골라 단서를 비교해 보세요.";
+    }
+
+    if (!solved) {
+      return "다음에는 모은 단서 중 가장 중요한 장면 하나를 골라 결론과 연결해 보세요.";
+    }
+
+    return `다음에는 「${bookTitle}」에서 그 답을 떠올리게 한 장면을 한 문장으로 덧붙여 보세요.`;
+  }
+
   function buildPracticeAssessment(payload = {}) {
     const conversation = Array.isArray(payload.conversation) ? payload.conversation : [];
     const userTurns = conversation.filter((entry) => entry.role === "user").length;
     const cluesFound = Number(payload.progress?.cluesFound || payload.cluesFound || 0);
     const solved = Boolean(payload.progress?.solved || payload.correct);
+    const inquiryScore = Math.min(5, Math.max(2, userTurns + Math.min(2, cluesFound)));
+    const conclusionScore = solved ? 5 : Math.min(4, Math.max(2, cluesFound + 1));
     const scores = [
-      {
-        id: "clue",
-        label: "단서 찾기",
-        score: Math.min(5, Math.max(1, cluesFound + 1)),
-        comment: "인물과 장소 단서를 더 모을수록 점수가 올라가요."
-      },
-      {
-        id: "evidence",
-        label: "근거 연결",
-        score: Math.min(5, Math.max(1, userTurns)),
-        comment: "질문을 이어 가며 근거를 연결하려는 태도를 봤어요."
-      },
       {
         id: "inquiry",
         label: "질문 태도",
-        score: Math.min(5, Math.max(2, userTurns + 1)),
-        comment: "스스로 질문하고 확인하려는 모습이 좋아요."
+        score: inquiryScore,
+        comment: userTurns > 2
+          ? "스스로 질문을 이어 가며 단서를 확인하려는 태도가 좋아요."
+          : "질문을 조금 더 이어 가면 인물과 장소 단서를 더 넓게 볼 수 있어요."
       },
       {
         id: "conclusion",
         label: "추리 결론",
-        score: solved ? 5 : 3,
-        comment: solved ? "마지막 추리가 핵심 단서와 잘 맞았어요." : "결론을 더 단서와 연결해 보면 좋아요."
+        score: conclusionScore,
+        comment: solved ? "마지막 추리가 핵심 단서와 잘 맞았어요." : "결론을 말할 때 가장 중요한 장면을 함께 붙이면 더 단단해져요."
       }
     ];
 
     return {
       totalScore: scores.reduce((sum, item) => sum + item.score, 0),
-      maxScore: 20,
+      maxScore: 10,
       scores,
-      summary: "오늘 대화에서는 단서를 고르고 질문으로 확인하는 독서 모험 흐름을 잘 따라왔어요.",
-      nextStep: "다음에는 답을 말할 때 어떤 장면이 근거인지 한 문장으로 붙여 보세요."
+      summary: solved
+        ? "오늘은 질문으로 단서를 모으고 마지막 결론까지 잘 이어 갔어요."
+        : "오늘은 질문으로 단서를 모으는 흐름을 따라왔고, 결론을 더 단단하게 만들 준비가 되었어요.",
+      nextStep: buildPracticeNextStep(payload)
     };
   }
 
@@ -176,6 +223,32 @@
     } catch (error) {
       console.warn("[BookAdventure] Azure assessment API unavailable. Using practice rubric.", error);
       return buildPracticeAssessment(payload);
+    }
+  };
+
+  window.submitTitleScenarioToTeacher = async function submitTitleScenarioToTeacher(payload) {
+    try {
+      const data = await postJson("/api/adventure/title-scenario", payload);
+      if (!data?.saved) {
+        const localItem = saveTitleScenarioSubmissionLocally(payload);
+        return {
+          ...data,
+          localSaved: true,
+          localId: localItem.id,
+          storage: data?.storage || "browser-local-storage"
+        };
+      }
+      return data;
+    } catch (error) {
+      console.warn("[BookAdventure] Title scenario API unavailable. Saving locally.", error);
+      const localItem = saveTitleScenarioSubmissionLocally(payload);
+      return {
+        ok: true,
+        saved: false,
+        localSaved: true,
+        localId: localItem.id,
+        storage: "browser-local-storage"
+      };
     }
   };
 })();

@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>한 권으로의 모험</title>
-    <link rel="stylesheet" href="./style.css?v=20260709-hud-question-1">
+    <link rel="stylesheet" href="./style.css?v=20260709-title-scenario-1">
   </head>
   <body>
     <main class="app-shell">
@@ -92,7 +92,7 @@
               <p id="selectedDescription">
                 달빛 아래 길 위에서 이어지는 만남과 기억을 따라가는 한국 단편소설입니다.
               </p>
-              <button class="start-button" id="startButton" type="button">이 책으로 모험 시작</button>
+              <button class="start-button" id="startButton" type="button">이 책으로 활동 고르기</button>
             </div>
           </div>
         </aside>
@@ -110,6 +110,50 @@
 
           <div class="shelf-wood" aria-hidden="true"></div>
         </section>
+      </section>
+
+      <section class="activity-menu-screen" id="activityMenuScreen" aria-label="활동 선택 화면">
+        <div class="activity-menu-panel">
+          <p class="section-label">활동 선택</p>
+          <h2>어떤 독서 모험을 시작할까요?</h2>
+          <p class="activity-menu-intro">
+            같은 책으로도 제목 상상하기와 단서 추리하기를 따로 진행할 수 있어요.
+          </p>
+
+          <div class="activity-card-grid">
+            <article class="activity-card">
+              <span class="activity-number">활동 1</span>
+              <h3>책 제목만 보고 가상 시나리오 작성하기</h3>
+              <p>책 내용을 읽기 전, 제목만 보고 장면과 이야기를 상상해 봅니다.</p>
+              <button id="startScenarioButton" type="button">활동 1 시작</button>
+            </article>
+
+            <article class="activity-card">
+              <span class="activity-number">활동 2</span>
+              <h3>질문과 단서로 숨은 인연 추리하기</h3>
+              <p>인물의 마음과 장소 단서를 모아 마지막 정답을 추리합니다.</p>
+              <button id="startAdventureActivityButton" type="button">활동 2 시작</button>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="scenario-screen" id="scenarioScreen" aria-label="책 제목 상상 시나리오 작성 화면">
+        <div class="scenario-panel">
+          <p class="section-label">활동 1</p>
+          <h2>책 제목만 보고 가상 시나리오 작성하기</h2>
+          <div class="title-only-card">
+            <span>오늘의 책 제목</span>
+            <strong id="scenarioBookTitle">메밀꽃 필 무렵</strong>
+          </div>
+          <div class="scenario-chat-log" id="scenarioChatLog" aria-live="polite"></div>
+          <div class="scenario-choice-panel" id="scenarioChoicePanel"></div>
+          <form class="scenario-step-form" id="scenarioStepForm">
+            <input id="scenarioStepInput" type="text" autocomplete="off" maxlength="420" placeholder="생각을 한 문장으로 써 보세요.">
+            <button id="scenarioStepSubmitButton" type="submit">보내기</button>
+          </form>
+          <p class="profile-error is-hidden" id="scenarioError" role="alert"></p>
+        </div>
       </section>
 
       <section class="adventure-screen" id="adventureScreen" aria-label="대화형 독서 모험 화면">
@@ -183,7 +227,7 @@
       </section>
     </main>
 
-    <script src="./agent-client.js?v=20260709-session-assessment-2"></script>
-    <script src="./app.js?v=20260709-hud-question-1"></script>
+    <script src="./agent-client.js?v=20260709-title-scenario-1"></script>
+    <script src="./app.js?v=20260709-title-scenario-1"></script>
   </body>
 </html>

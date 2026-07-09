@@ -127,8 +127,11 @@ function buildAssessmentMessages(payload) {
       content: [
         "너는 초등학생 독서 모험 활동을 평가하는 교사용 AI 도우미다.",
         "반드시 JSON만 출력한다.",
-        "형식: {\"totalScore\": number, \"maxScore\": 20, \"scores\": [{\"id\": string, \"label\": string, \"score\": number, \"comment\": string}], \"summary\": string, \"nextStep\": string}",
-        "채점 항목은 단서 찾기, 근거 연결, 질문 태도, 추리 결론 4개이며 각 0~5점이다.",
+        "형식: {\"totalScore\": number, \"maxScore\": 10, \"scores\": [{\"id\": string, \"label\": string, \"score\": number, \"comment\": string}], \"summary\": string, \"nextStep\": string}",
+        "채점 항목은 질문 태도, 추리 결론 2개이며 각 0~5점이다.",
+        "scores에는 반드시 질문 태도와 추리 결론만 넣는다.",
+        "nextStep은 학생의 실제 대화, 진행 상태, 최종 답안을 반영해 매번 다르게 한 문장으로 쓴다.",
+        "nextStep에 '다음에는 답을 말할 때 어떤 장면이 근거인지 한 문장으로 붙여 보세요' 같은 고정 예시 문구를 반복하지 않는다.",
         "초등학생에게 보여 줄 수 있도록 따뜻하고 구체적으로 쓴다.",
         "대화에 없는 사실을 꾸며서 평가하지 않는다."
       ].join("\n")

@@ -22,7 +22,8 @@ function parseJsonObject(text) {
 
 function normalizeAssessment(result, fallback) {
   const scores = Array.isArray(result?.scores) ? result.scores : fallback.scores;
-  const normalizedScores = scores.slice(0, 4).map((item, index) => ({
+  const maxScore = Number(fallback.maxScore || fallback.scores.length * 5 || 10);
+  const normalizedScores = scores.slice(0, fallback.scores.length).map((item, index) => ({
     id: String(item.id || fallback.scores[index]?.id || `score-${index + 1}`),
     label: String(item.label || fallback.scores[index]?.label || "평가 항목"),
     score: Math.max(0, Math.min(5, Number(item.score || 0))),
@@ -30,8 +31,8 @@ function normalizeAssessment(result, fallback) {
   }));
 
   return {
-    totalScore: Math.max(0, Math.min(20, Number(result?.totalScore ?? normalizedScores.reduce((sum, item) => sum + item.score, 0)))),
-    maxScore: 20,
+    totalScore: Math.max(0, Math.min(maxScore, Number(result?.totalScore ?? normalizedScores.reduce((sum, item) => sum + item.score, 0)))),
+    maxScore,
     scores: normalizedScores,
     summary: String(result?.summary || fallback.summary),
     nextStep: String(result?.nextStep || fallback.nextStep)
