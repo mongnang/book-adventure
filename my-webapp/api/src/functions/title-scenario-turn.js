@@ -31,6 +31,13 @@ function normalizePrompt(prompt, fallback = null) {
   };
 }
 
+function cleanAiText(text) {
+  return String(text || "")
+    .replace(/^```(?:json)?/i, "")
+    .replace(/```$/i, "")
+    .trim();
+}
+
 function buildPracticeScenario(payload) {
   const title = payload.book?.title || "선택한 책";
   const answers = payload.answers || {};
@@ -67,6 +74,32 @@ function buildPracticePrompt(payload, scenarioText) {
       `- 표지에 넣을 제목 글자: "${title}"`
     ].join("\n"),
     en: `A book cover illustration of ${scene}, ${mood}, ${colors}, with the title text "${title}" in an elegant storybook lettering style, children's book art.`
+  };
+}
+
+function normalizeRawTextResult(text, payload) {
+  const rawText = cleanAiText(text);
+  if (!rawText) return null;
+
+  if (payload.action === "prompt") {
+    const scenarioText = payload.scenarioText || buildPracticeScenario(payload);
+    const fallbackPrompt = buildPracticePrompt(payload, scenarioText);
+    return {
+      guideText: "AI 사서가 표지 프롬프트를 완성했어요.",
+      scenarioText,
+      nanoBananaPrompt: {
+        ...fallbackPrompt,
+        ko: rawText
+      }
+    };
+  }
+
+  return {
+    guideText: payload.action === "revise"
+      ? "AI 사서가 그 방향으로 다시 고쳐 쓴 시나리오예요."
+      : "AI 사서가 네 상상을 살려 만든 가상 시나리오예요.",
+    scenarioText: rawText,
+    nanoBananaPrompt: null
   };
 }
 
@@ -108,6 +141,9 @@ app.http("titleScenarioTurn", {
         const parsed = parseJsonObject(text);
         if (parsed) {
           result = normalizeTitleScenarioResult(parsed, payload);
+          mode = "azure-openai";
+        } else if (text && text.trim()) {
+          result = normalizeTitleScenarioResult(normalizeRawTextResult(text, payload), payload);
           mode = "azure-openai";
         } else {
           openAIError = "Azure OpenAI returned non-JSON content.";
