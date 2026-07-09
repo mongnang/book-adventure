@@ -24,7 +24,7 @@ app.http("adventureTurn", {
       try {
         const aiAnswer = await completeChat(buildTurnMessages(payload), {
           temperature: 0.45,
-          maxTokens: 1000
+          maxTokens: 1400
         });
         if (aiAnswer && aiAnswer.trim()) {
           answer = aiAnswer.trim();

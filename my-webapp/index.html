@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>한 권으로의 모험</title>
-    <link rel="stylesheet" href="./style.css?v=20260709-result-guide-1">
+    <link rel="stylesheet" href="./style.css?v=20260709-rabbit-result-1">
   </head>
   <body>
     <main class="app-shell">
@@ -162,9 +162,14 @@
           </section>
         </div>
       </section>
+      <section class="result-screen" id="resultScreen" aria-label="독서 모험 결과 화면">
+        <div class="result-backdrop" aria-hidden="true"></div>
+        <button class="result-back-button" id="resultBackToBooks" type="button">책장으로</button>
+        <div class="result-panel" id="resultPanel" aria-live="polite"></div>
+      </section>
     </main>
 
     <script src="./agent-client.js?v=20260709-session-assessment-2"></script>
-    <script src="./app.js?v=20260709-result-guide-1"></script>
+    <script src="./app.js?v=20260709-rabbit-result-1"></script>
   </body>
 </html>

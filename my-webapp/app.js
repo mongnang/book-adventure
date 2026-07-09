@@ -257,11 +257,15 @@ let books = [...fallbackBooks];
 
 const STUDENT_PROFILE_KEY = "book-adventure-student-profile";
 const CONVERSATION_LOG_KEY = "book-adventure-conversation-log";
+const GUIDE_CHARACTER_IMAGE = "./assets/characters/rabbit-librarian.png";
 
 const heroScreen = document.querySelector("#heroScreen");
 const profileScreen = document.querySelector("#profileScreen");
 const bookScreen = document.querySelector("#bookScreen");
 const adventureScreen = document.querySelector("#adventureScreen");
+const resultScreen = document.querySelector("#resultScreen");
+const resultPanel = document.querySelector("#resultPanel");
+const resultBackToBooks = document.querySelector("#resultBackToBooks");
 const enterControl = document.querySelector("#enterControl");
 const studentProfileForm = document.querySelector("#studentProfileForm");
 const studentClassInput = document.querySelector("#studentClassInput");
@@ -659,6 +663,11 @@ function goToAdventure() {
   adventureScreen.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
+function goToResult() {
+  activeScreenId = "resultScreen";
+  resultScreen.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
 function getMajorCharacters(book) {
   return majorCharactersByBook[book.id] || ["주요 인물", "상대 인물", "조력자"];
 }
@@ -697,17 +706,23 @@ function formatDetailQuestion(question, category) {
 
 function setSceneCharacter(character) {
   characterPortrait.classList.remove("is-place-hidden");
-  const nextCharacter = character || getCharacterProfiles(selectedBook)[0];
+  const isGuideCharacter = !character;
+  const nextImage = isGuideCharacter ? GUIDE_CHARACTER_IMAGE : character?.sceneImage;
+  characterPortrait.classList.toggle("is-guide-character", isGuideCharacter);
 
-  if (!nextCharacter?.sceneImage) {
+  if (!nextImage) {
     characterImage.removeAttribute("src");
     characterPortrait.classList.remove("has-image");
     return;
   }
 
+  characterPortrait.classList.remove("has-image");
   characterImage.onload = () => characterPortrait.classList.add("has-image");
   characterImage.onerror = () => characterPortrait.classList.remove("has-image");
-  characterImage.src = nextCharacter.sceneImage;
+  characterImage.src = nextImage;
+  if (characterImage.complete && characterImage.naturalWidth > 0) {
+    characterPortrait.classList.add("has-image");
+  }
 }
 
 function setScenePlace(place) {
@@ -1149,7 +1164,8 @@ function renderAssessmentResult(assessment) {
   toggleCustomQuestion(false);
   toggleNextQuestionButton(false);
   chatTitle.textContent = "나의 독서 모험 결과";
-  showChoiceOverlay();
+  hideChoiceOverlay();
+  resultPanel.innerHTML = "";
 
   const card = document.createElement("article");
   card.className = "assessment-card";
@@ -1267,7 +1283,7 @@ function renderAssessmentResult(assessment) {
   board.append(boardTitle, scoreList);
   guide.append(header, speech, controls, board, nextStep);
   card.append(librarian, guide);
-  questionPanel.appendChild(card);
+  resultPanel.appendChild(card);
 
   const pages = [
     {
@@ -1321,6 +1337,7 @@ function renderAssessmentResult(assessment) {
   prevButton.addEventListener("click", () => updateAssessmentPage(currentPage - 1));
   nextButton.addEventListener("click", () => updateAssessmentPage(currentPage + 1));
   updateAssessmentPage(0);
+  goToResult();
 
   setDialogue("좋아, 오늘의 독서 모험 결과를 정리했어. 점수보다 중요한 건 어떤 단서를 어떻게 이어 봤는지야.", "AI 독서 파트너");
 }
@@ -1743,6 +1760,7 @@ customQuestionForm.addEventListener("submit", (event) => {
   submitReadingQuestion(customQuestionInput.value);
 });
 backToBooks.addEventListener("click", returnToBookShelf);
+resultBackToBooks.addEventListener("click", returnToBookShelf);
 answerGuessButton.addEventListener("click", renderAnswerGuess);
 nextQuestionButton.addEventListener("click", () => renderCategoryChoices({ updateDialogue: false }));
 startButton.addEventListener("click", openAdventureScreen);
