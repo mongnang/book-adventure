@@ -1236,16 +1236,69 @@ button {
 .assessment-card {
   grid-column: 1 / -1;
   display: grid;
-  gap: 12px;
+  grid-template-columns: minmax(150px, 0.42fr) minmax(0, 1fr);
+  gap: 16px;
   padding: 18px;
   border: 1px solid rgba(255, 226, 174, 0.24);
   border-radius: 8px;
   background: rgba(255, 246, 225, 0.08);
 }
 
+.assessment-librarian {
+  display: grid;
+  align-content: end;
+  justify-items: center;
+  min-width: 0;
+  gap: 8px;
+}
+
+.assessment-librarian-frame {
+  display: grid;
+  place-items: center;
+  width: min(160px, 100%);
+  aspect-ratio: 4 / 5;
+  border: 1px solid rgba(255, 226, 174, 0.25);
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 50% 22%, rgba(255, 231, 184, 0.22), transparent 28%),
+    linear-gradient(180deg, rgba(75, 39, 23, 0.62), rgba(20, 10, 6, 0.78));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.assessment-librarian-placeholder {
+  display: grid;
+  place-items: center;
+  width: 70%;
+  aspect-ratio: 1;
+  border: 1px dashed rgba(255, 229, 184, 0.45);
+  border-radius: 999px;
+  color: rgba(255, 244, 220, 0.78);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.assessment-librarian p {
+  margin: 0;
+  color: rgba(242, 222, 194, 0.68);
+  font-size: 12px;
+  text-align: center;
+}
+
+.assessment-guide {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.assessment-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .assessment-card h3,
 .assessment-total,
-.assessment-summary,
 .assessment-next {
   margin: 0;
 }
@@ -1259,12 +1312,100 @@ button {
   color: #ffe4ad;
   font-size: 28px;
   font-weight: 900;
+  white-space: nowrap;
 }
 
-.assessment-summary,
 .assessment-next {
   color: rgba(242, 222, 194, 0.86);
   line-height: 1.55;
+}
+
+.assessment-speech {
+  position: relative;
+  display: grid;
+  gap: 10px;
+  min-height: 138px;
+  padding: 16px 18px;
+  border: 1px solid rgba(255, 226, 174, 0.3);
+  border-radius: 8px;
+  background: rgba(18, 10, 6, 0.42);
+}
+
+.assessment-speech::before {
+  content: "";
+  position: absolute;
+  left: -10px;
+  bottom: 34px;
+  width: 18px;
+  height: 18px;
+  border-left: 1px solid rgba(255, 226, 174, 0.3);
+  border-bottom: 1px solid rgba(255, 226, 174, 0.3);
+  background: rgba(18, 10, 6, 0.72);
+  transform: rotate(45deg);
+}
+
+.assessment-speech-label {
+  color: #ffe4ad;
+  font-size: 15px;
+}
+
+.assessment-speech-text {
+  margin: 0;
+  color: #fff4dc;
+  line-height: 1.64;
+  word-break: keep-all;
+}
+
+.assessment-speech-score {
+  display: grid;
+  grid-template-columns: auto minmax(120px, 1fr);
+  align-items: center;
+  gap: 10px;
+  color: rgba(242, 222, 194, 0.8);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.assessment-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.assessment-controls button {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 226, 174, 0.28);
+  border-radius: 8px;
+  background: rgba(217, 175, 98, 0.14);
+  color: #ffe4ad;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.assessment-controls button:disabled {
+  opacity: 0.42;
+  cursor: default;
+}
+
+.assessment-page-counter {
+  min-width: 52px;
+  color: rgba(242, 222, 194, 0.7);
+  font-size: 13px;
+  text-align: center;
+}
+
+.assessment-board {
+  display: grid;
+  gap: 8px;
+}
+
+.assessment-board-title {
+  margin: 0;
+  color: rgba(242, 222, 194, 0.72);
+  font-size: 12px;
+  font-weight: 900;
 }
 
 .assessment-score-list {
@@ -1275,6 +1416,14 @@ button {
 .assessment-score {
   display: grid;
   gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+}
+
+.assessment-score.is-active {
+  border-color: rgba(255, 226, 174, 0.28);
+  background: rgba(217, 175, 98, 0.1);
 }
 
 .assessment-score strong {
@@ -1415,6 +1564,21 @@ button {
 
   .choice-button span {
     font-size: 12px;
+  }
+
+  .assessment-card {
+    grid-template-columns: minmax(120px, 0.36fr) minmax(0, 1fr);
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .assessment-librarian-frame {
+    width: min(120px, 100%);
+  }
+
+  .assessment-speech {
+    min-height: 112px;
+    padding: 13px 14px;
   }
 }
 
@@ -1637,6 +1801,41 @@ button {
   }
 
   .place-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .assessment-card {
+    grid-template-columns: 1fr;
+  }
+
+  .assessment-librarian {
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    justify-items: start;
+  }
+
+  .assessment-librarian-frame {
+    width: 86px;
+  }
+
+  .assessment-librarian-placeholder {
+    font-size: 11px;
+  }
+
+  .assessment-speech::before {
+    left: 34px;
+    top: -9px;
+    bottom: auto;
+    transform: rotate(135deg);
+  }
+
+  .assessment-header {
+    align-items: start;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .assessment-speech-score {
     grid-template-columns: 1fr;
   }
 }

@@ -1154,21 +1154,89 @@ function renderAssessmentResult(assessment) {
   const card = document.createElement("article");
   card.className = "assessment-card";
 
+  const librarian = document.createElement("div");
+  librarian.className = "assessment-librarian";
+  librarian.setAttribute("aria-label", "AI 사서 캐릭터 자리");
+
+  const librarianFrame = document.createElement("div");
+  librarianFrame.className = "assessment-librarian-frame";
+  librarianFrame.setAttribute("aria-hidden", "true");
+
+  const librarianPlaceholder = document.createElement("div");
+  librarianPlaceholder.className = "assessment-librarian-placeholder";
+  librarianPlaceholder.textContent = "AI 사서";
+
+  const librarianNote = document.createElement("p");
+  librarianNote.textContent = "캐릭터 이미지 준비 중";
+  librarianFrame.appendChild(librarianPlaceholder);
+  librarian.append(librarianFrame, librarianNote);
+
+  const guide = document.createElement("div");
+  guide.className = "assessment-guide";
+
+  const header = document.createElement("header");
+  header.className = "assessment-header";
+
   const title = document.createElement("h3");
-  title.textContent = `${getStudentLabel()}의 결과`;
+  title.textContent = `${getStudentLabel()}의 독서 모험 결과`;
 
   const total = document.createElement("p");
   total.className = "assessment-total";
   total.textContent = `${assessment.totalScore}/${assessment.maxScore}점`;
 
-  const summary = document.createElement("p");
-  summary.className = "assessment-summary";
-  summary.textContent = assessment.summary;
+  header.append(title, total);
 
-  const list = document.createElement("div");
-  list.className = "assessment-score-list";
+  const speech = document.createElement("section");
+  speech.className = "assessment-speech";
+  speech.setAttribute("aria-live", "polite");
 
-  assessment.scores.forEach((item) => {
+  const speechLabel = document.createElement("strong");
+  speechLabel.className = "assessment-speech-label";
+
+  const speechText = document.createElement("p");
+  speechText.className = "assessment-speech-text";
+
+  const speechScore = document.createElement("div");
+  speechScore.className = "assessment-speech-score";
+
+  const speechScoreText = document.createElement("span");
+  const speechTrack = document.createElement("span");
+  speechTrack.className = "score-track";
+
+  const speechBar = document.createElement("span");
+  speechBar.className = "score-bar";
+
+  speechTrack.appendChild(speechBar);
+  speechScore.append(speechScoreText, speechTrack);
+  speech.append(speechLabel, speechText, speechScore);
+
+  const controls = document.createElement("div");
+  controls.className = "assessment-controls";
+
+  const prevButton = document.createElement("button");
+  prevButton.type = "button";
+  prevButton.textContent = "이전";
+
+  const pageCounter = document.createElement("span");
+  pageCounter.className = "assessment-page-counter";
+
+  const nextButton = document.createElement("button");
+  nextButton.type = "button";
+  nextButton.textContent = "다음";
+
+  controls.append(prevButton, pageCounter, nextButton);
+
+  const board = document.createElement("div");
+  board.className = "assessment-board";
+
+  const boardTitle = document.createElement("p");
+  boardTitle.className = "assessment-board-title";
+  boardTitle.textContent = "항목별 그래프";
+
+  const scoreList = document.createElement("div");
+  scoreList.className = "assessment-score-list";
+
+  const scoreRows = assessment.scores.map((item) => {
     const row = document.createElement("div");
     row.className = "assessment-score";
 
@@ -1187,15 +1255,73 @@ function renderAssessmentResult(assessment) {
 
     track.appendChild(bar);
     row.append(label, track, comment);
-    list.appendChild(row);
+    scoreList.appendChild(row);
+
+    return row;
   });
 
   const nextStep = document.createElement("p");
   nextStep.className = "assessment-next";
   nextStep.textContent = `다음 목표: ${assessment.nextStep}`;
 
-  card.append(title, total, summary, list, nextStep);
+  board.append(boardTitle, scoreList);
+  guide.append(header, speech, controls, board, nextStep);
+  card.append(librarian, guide);
   questionPanel.appendChild(card);
+
+  const pages = [
+    {
+      label: "전체 결과",
+      text: assessment.summary,
+      score: assessment.totalScore,
+      maxScore: assessment.maxScore,
+      scoreText: `총점 ${assessment.totalScore}/${assessment.maxScore}점`,
+      scoreIndex: -1
+    },
+    ...assessment.scores.map((item, index) => ({
+      label: item.label,
+      text: item.comment,
+      score: item.score,
+      maxScore: 5,
+      scoreText: `${item.score}/5점`,
+      scoreIndex: index
+    })),
+    {
+      label: "다음 목표",
+      text: assessment.nextStep,
+      score: 0,
+      maxScore: 1,
+      scoreText: "다음 모험 준비",
+      scoreIndex: -1
+    }
+  ];
+
+  let currentPage = 0;
+
+  function updateAssessmentPage(nextIndex) {
+    currentPage = Math.max(0, Math.min(pages.length - 1, nextIndex));
+    const page = pages[currentPage];
+    const percent = page.maxScore > 1
+      ? Math.max(0, Math.min(100, (page.score / page.maxScore) * 100))
+      : 100;
+
+    speechLabel.textContent = page.label;
+    speechText.textContent = page.text;
+    speechScoreText.textContent = page.scoreText;
+    speechBar.style.width = `${percent}%`;
+    pageCounter.textContent = `${currentPage + 1} / ${pages.length}`;
+    prevButton.disabled = currentPage === 0;
+    nextButton.disabled = currentPage === pages.length - 1;
+
+    scoreRows.forEach((row, index) => {
+      row.classList.toggle("is-active", index === page.scoreIndex);
+    });
+  }
+
+  prevButton.addEventListener("click", () => updateAssessmentPage(currentPage - 1));
+  nextButton.addEventListener("click", () => updateAssessmentPage(currentPage + 1));
+  updateAssessmentPage(0);
+
   setDialogue("좋아, 오늘의 독서 모험 결과를 정리했어. 점수보다 중요한 건 어떤 단서를 어떻게 이어 봤는지야.", "AI 독서 파트너");
 }
 
