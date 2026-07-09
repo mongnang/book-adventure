@@ -773,7 +773,9 @@ function createTitleScenarioState(book = selectedBook) {
     scenario: "",
     prompt: null,
     revisionCount: 0,
-    lastRevisionId: ""
+    lastRevisionId: "",
+    lastRevisionLabel: "",
+    busy: false
   };
 }
 
@@ -855,12 +857,14 @@ function renderTitleScenarioChoices() {
     resultButton.className = "scenario-choice-button is-primary";
     resultButton.dataset.scenarioAction = "showResult";
     resultButton.textContent = "결과 다시 보기";
+    resultButton.disabled = Boolean(titleScenarioActivity.busy);
 
     const restartButton = document.createElement("button");
     restartButton.type = "button";
     restartButton.className = "scenario-choice-button";
     restartButton.dataset.scenarioAction = "restart";
     restartButton.textContent = "처음부터 다시 하기";
+    restartButton.disabled = Boolean(titleScenarioActivity.busy);
 
     scenarioChoicePanel.append(resultButton, restartButton);
     return;
@@ -873,6 +877,7 @@ function renderTitleScenarioChoices() {
     button.dataset.scenarioAction = "revise";
     button.dataset.revisionId = choice.id;
     button.textContent = choice.label;
+    button.disabled = Boolean(titleScenarioActivity.busy);
     scenarioChoicePanel.appendChild(button);
   });
 
@@ -881,6 +886,7 @@ function renderTitleScenarioChoices() {
   confirmButton.className = "scenario-choice-button is-primary";
   confirmButton.dataset.scenarioAction = "finalize";
   confirmButton.textContent = "이거 좋아! 확정하기";
+  confirmButton.disabled = Boolean(titleScenarioActivity.busy);
   scenarioChoicePanel.appendChild(confirmButton);
 }
 
@@ -890,6 +896,14 @@ function renderTitleScenarioActivity() {
   renderTitleScenarioLog();
   renderTitleScenarioChoices();
   showScenarioError("");
+
+  if (titleScenarioActivity.busy) {
+    scenarioStepInput.disabled = true;
+    scenarioStepSubmitButton.disabled = true;
+    scenarioStepInput.placeholder = "AI 사서가 이야기를 다듬는 중이에요.";
+    scenarioStepSubmitButton.textContent = "대기";
+    return;
+  }
 
   if (titleScenarioActivity.stage === "final") {
     scenarioStepInput.value = "";
@@ -925,6 +939,41 @@ function startTitleScenarioActivity({ restart = false } = {}) {
   }
 
   renderTitleScenarioActivity();
+}
+
+function setTitleScenarioBusy(isBusy) {
+  if (!titleScenarioActivity) return;
+  titleScenarioActivity.busy = isBusy;
+  renderTitleScenarioActivity();
+}
+
+function getTitleScenarioSnapshot(limit = 12) {
+  return (titleScenarioActivity?.messages || []).slice(-limit).map((message) => ({
+    role: message.role === "user" ? "user" : "agent",
+    text: message.text,
+    createdAt: message.createdAt
+  }));
+}
+
+async function requestTitleScenarioAI(action, extra = {}) {
+  if (typeof window.requestTitleScenarioTurn !== "function") {
+    throw new Error("Title scenario AI client is unavailable.");
+  }
+
+  return window.requestTitleScenarioTurn({
+    action,
+    student: getStudentSnapshot(),
+    book: {
+      id: selectedBook.id,
+      title: selectedBook.title,
+      author: selectedBook.author,
+      description: selectedBook.description
+    },
+    answers: { ...titleScenarioActivity.answers },
+    scenarioText: titleScenarioActivity.scenario || "",
+    conversation: getTitleScenarioSnapshot(20),
+    ...extra
+  });
 }
 
 function buildTitleScenarioText() {
@@ -988,7 +1037,31 @@ function buildRevisedTitleScenarioText(revisionId, customRequest = "") {
   ].join(" ");
 }
 
-function handleTitleScenarioAnswer(answer) {
+async function createTitleScenarioDraft() {
+  setTitleScenarioBusy(true);
+
+  try {
+    const result = await requestTitleScenarioAI("draft");
+    titleScenarioActivity.scenario = String(result?.scenarioText || "").trim() || buildTitleScenarioText();
+    appendTitleScenarioMessage("guide", result?.guideText || "좋아. 네가 상상한 세 가지를 살려서 짧은 가상 줄거리로 만들어 봤어.");
+    appendTitleScenarioMessage("guide", titleScenarioActivity.scenario);
+
+    if (result?.mode && result.mode !== "azure-openai" && result.openAIError) {
+      appendTitleScenarioMessage("guide", "지금은 AI 연결이 불안정해서 임시 방식으로 이야기를 정리했어. 그래도 이어서 수정해 볼 수 있어.");
+    }
+  } catch (error) {
+    titleScenarioActivity.scenario = buildTitleScenarioText();
+    appendTitleScenarioMessage("guide", "지금은 AI 연결이 잠깐 불안정해서 임시 방식으로 이야기를 정리했어.");
+    appendTitleScenarioMessage("guide", titleScenarioActivity.scenario);
+  } finally {
+    titleScenarioActivity.stage = "review";
+    appendTitleScenarioMessage("guide", "이 이야기를 어떻게 바꿔볼까? 아래 보기에서 고르거나, 직접 바꾸고 싶은 점을 써 줘.");
+    titleScenarioActivity.busy = false;
+    renderTitleScenarioActivity();
+  }
+}
+
+async function handleTitleScenarioAnswer(answer) {
   const cleanAnswer = answer.trim();
   if (!cleanAnswer) {
     showScenarioError("생각을 한 문장으로 적어 주세요.");
@@ -1014,18 +1087,18 @@ function handleTitleScenarioAnswer(answer) {
     appendTitleScenarioMessage("guide", getTitleScenarioQuestion("event"));
   } else if (titleScenarioActivity.stage === "event") {
     titleScenarioActivity.answers.event = cleanAnswer;
-    titleScenarioActivity.scenario = buildTitleScenarioText();
-    titleScenarioActivity.stage = "review";
-    appendTitleScenarioMessage("guide", "좋아. 네가 상상한 세 가지를 살려서 짧은 가상 줄거리로 만들어 봤어.");
-    appendTitleScenarioMessage("guide", titleScenarioActivity.scenario);
-    appendTitleScenarioMessage("guide", "이 이야기를 어떻게 바꿔볼까? 아래 보기에서 고르거나, 직접 바꾸고 싶은 점을 써 줘.");
+    scenarioStepInput.value = "";
+    appendTitleScenarioMessage("guide", "좋아. 이제 네 생각을 바탕으로 AI 사서가 가상 시나리오를 써 볼게.");
+    renderTitleScenarioActivity();
+    await createTitleScenarioDraft();
+    return;
   }
 
   scenarioStepInput.value = "";
   renderTitleScenarioActivity();
 }
 
-function reviseTitleScenario(revisionId, customRequest = "") {
+async function reviseTitleScenario(revisionId, customRequest = "") {
   const choice = titleScenarioRevisionChoices.find((item) => item.id === revisionId);
   const label = choice?.label || customRequest;
 
@@ -1036,13 +1109,33 @@ function reviseTitleScenario(revisionId, customRequest = "") {
 
   titleScenarioActivity.revisionCount += 1;
   titleScenarioActivity.lastRevisionId = revisionId || "custom";
+  titleScenarioActivity.lastRevisionLabel = label;
   appendTitleScenarioMessage("user", label);
-  titleScenarioActivity.scenario = buildRevisedTitleScenarioText(revisionId, customRequest);
-  appendTitleScenarioMessage("guide", "좋아. 그 방향으로 다시 고쳐 쓴 시나리오야.");
-  appendTitleScenarioMessage("guide", titleScenarioActivity.scenario);
-  appendTitleScenarioMessage("guide", "마음에 들면 확정하고, 더 바꾸고 싶으면 다시 골라 줘.");
   scenarioStepInput.value = "";
-  renderTitleScenarioActivity();
+  setTitleScenarioBusy(true);
+
+  try {
+    const result = await requestTitleScenarioAI("revise", {
+      revisionId: revisionId || "custom",
+      revisionLabel: label,
+      customRequest
+    });
+    titleScenarioActivity.scenario = String(result?.scenarioText || "").trim() || buildRevisedTitleScenarioText(revisionId, customRequest);
+    appendTitleScenarioMessage("guide", result?.guideText || "좋아. 그 방향으로 다시 고쳐 쓴 시나리오야.");
+    appendTitleScenarioMessage("guide", titleScenarioActivity.scenario);
+
+    if (result?.mode && result.mode !== "azure-openai" && result.openAIError) {
+      appendTitleScenarioMessage("guide", "AI 연결이 잠깐 불안정해서 임시 방식으로 고쳐 썼어.");
+    }
+  } catch (error) {
+    titleScenarioActivity.scenario = buildRevisedTitleScenarioText(revisionId, customRequest);
+    appendTitleScenarioMessage("guide", "지금은 AI 연결이 잠깐 불안정해서 임시 방식으로 고쳐 썼어.");
+    appendTitleScenarioMessage("guide", titleScenarioActivity.scenario);
+  } finally {
+    appendTitleScenarioMessage("guide", "마음에 들면 확정하고, 더 바꾸고 싶으면 다시 골라 줘.");
+    titleScenarioActivity.busy = false;
+    renderTitleScenarioActivity();
+  }
 }
 
 function normalizePromptPart(text, maxLength = 180) {
@@ -1052,7 +1145,7 @@ function normalizePromptPart(text, maxLength = 180) {
 
 function buildNanoBananaPrompt() {
   const revision = titleScenarioRevisionChoices.find((choice) => choice.id === titleScenarioActivity.lastRevisionId);
-  const mood = revision?.mood || "따뜻하고 신비로운";
+  const mood = revision?.mood || titleScenarioActivity.lastRevisionLabel || "따뜻하고 신비로운";
   const colors = revision?.colors || "달빛 금색, 짙은 갈색, 부드러운 크림색";
   const { character, setting, event } = titleScenarioActivity.answers;
   const scene = `${setting}에서 ${character}이(가) ${event} 일의 단서를 마주하는 장면`;
@@ -1071,6 +1164,49 @@ function buildNanoBananaPrompt() {
     ].join("\n"),
     en: `A book cover illustration of ${normalizePromptPart(scene, 120)}, ${mood}, ${colors}, with the title text "${title}" in an elegant storybook lettering style, children's book art.`
   };
+}
+
+function normalizeNanoBananaPrompt(prompt) {
+  if (!prompt || typeof prompt !== "object") return null;
+
+  return {
+    mood: String(prompt.mood || ""),
+    scene: String(prompt.scene || ""),
+    colors: String(prompt.colors || ""),
+    ko: String(prompt.ko || ""),
+    en: String(prompt.en || "")
+  };
+}
+
+async function createNanoBananaPromptWithAI() {
+  setTitleScenarioBusy(true);
+
+  try {
+    const result = await requestTitleScenarioAI("prompt", {
+      revisionId: titleScenarioActivity.lastRevisionId || "",
+      revisionLabel: titleScenarioActivity.lastRevisionLabel || ""
+    });
+    const prompt = normalizeNanoBananaPrompt(result?.nanoBananaPrompt);
+    titleScenarioActivity.prompt = prompt?.ko && prompt?.en ? prompt : buildNanoBananaPrompt();
+
+    if (result?.scenarioText) {
+      titleScenarioActivity.scenario = String(result.scenarioText).trim();
+    }
+
+    if (result?.guideText) {
+      appendTitleScenarioMessage("guide", result.guideText);
+    }
+
+    if (result?.mode && result.mode !== "azure-openai" && result.openAIError) {
+      appendTitleScenarioMessage("guide", "AI 연결이 잠깐 불안정해서 임시 방식으로 프롬프트를 만들었어.");
+    }
+  } catch (error) {
+    titleScenarioActivity.prompt = buildNanoBananaPrompt();
+    appendTitleScenarioMessage("guide", "지금은 AI 연결이 잠깐 불안정해서 임시 방식으로 표지 프롬프트를 만들었어.");
+  } finally {
+    titleScenarioActivity.busy = false;
+    renderTitleScenarioActivity();
+  }
 }
 
 function saveTitleScenarioSubmissionLocally(payload) {
@@ -1131,14 +1267,20 @@ async function submitTitleScenarioForTeacher(statusElement, button) {
   }
 }
 
-function renderTitleScenarioResult() {
+async function renderTitleScenarioResult() {
   if (titleScenarioActivity.stage !== "final") {
     appendTitleScenarioMessage(
       "guide",
       `멋진 상상 이야기가 완성됐어. 이제 「${selectedBook.title}」 표지 그림 프롬프트를 결과 화면에서 확인해 보자.`
     );
   }
-  titleScenarioActivity.prompt = buildNanoBananaPrompt();
+
+  if (!titleScenarioActivity.prompt?.ko || !titleScenarioActivity.prompt?.en) {
+    appendTitleScenarioMessage("guide", "AI 사서가 표지 그림 프롬프트를 마지막으로 다듬는 중이야.");
+    renderTitleScenarioActivity();
+    await createNanoBananaPromptWithAI();
+  }
+
   titleScenarioActivity.stage = "final";
   resultOriginScreenId = "scenarioScreen";
   resultPanel.innerHTML = "";
@@ -1204,31 +1346,33 @@ function renderTitleScenarioResult() {
   goToResult();
 }
 
-function handleTitleScenarioFormSubmit(event) {
+async function handleTitleScenarioFormSubmit(event) {
   event.preventDefault();
   if (!titleScenarioActivity) startTitleScenarioActivity();
+  if (titleScenarioActivity.busy) return;
 
   const answer = scenarioStepInput.value.trim();
   if (titleScenarioActivity.stage === "review") {
-    reviseTitleScenario("custom", answer);
+    await reviseTitleScenario("custom", answer);
     return;
   }
 
-  handleTitleScenarioAnswer(answer);
+  await handleTitleScenarioAnswer(answer);
 }
 
-function handleTitleScenarioChoiceClick(event) {
+async function handleTitleScenarioChoiceClick(event) {
   const button = event.target.closest("[data-scenario-action]");
   if (!button) return;
+  if (titleScenarioActivity?.busy) return;
 
   const action = button.dataset.scenarioAction;
   if (action === "finalize") {
-    renderTitleScenarioResult();
+    await renderTitleScenarioResult();
     return;
   }
 
   if (action === "showResult") {
-    renderTitleScenarioResult();
+    await renderTitleScenarioResult();
     return;
   }
 
@@ -1239,7 +1383,7 @@ function handleTitleScenarioChoiceClick(event) {
   }
 
   if (action === "revise") {
-    reviseTitleScenario(button.dataset.revisionId);
+    await reviseTitleScenario(button.dataset.revisionId);
   }
 }
 

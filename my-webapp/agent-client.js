@@ -226,6 +226,15 @@
     }
   };
 
+  window.requestTitleScenarioTurn = async function requestTitleScenarioTurn(payload) {
+    try {
+      return await postJson("/api/adventure/title-scenario-turn", payload);
+    } catch (error) {
+      console.warn("[BookAdventure] Title scenario AI API unavailable.", error);
+      throw error;
+    }
+  };
+
   window.submitTitleScenarioToTeacher = async function submitTitleScenarioToTeacher(payload) {
     try {
       const data = await postJson("/api/adventure/title-scenario", payload);

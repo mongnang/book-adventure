@@ -147,7 +147,54 @@ function buildAssessmentMessages(payload) {
         "",
         formatConversation(payload.conversation),
         "",
-        "위 대화를 기준으로 4개 항목 점수와 짧은 피드백을 JSON으로 작성해 줘."
+        "위 대화를 기준으로 2개 항목 점수와 짧은 피드백을 JSON으로 작성해 줘."
+      ].join("\n")
+    }
+  ];
+}
+
+function buildTitleScenarioMessages(payload) {
+  const bookTitle = payload.book?.title || "선택한 책";
+  const action = payload.action || "draft";
+  const answers = payload.answers || {};
+
+  return [
+    {
+      role: "system",
+      content: [
+        "너는 초등학생을 위한 활동 1 '책 제목만 보고 상상하기'의 AI 진행자다.",
+        "이 활동의 핵심은 책을 읽기 전에 학생이 제목만 보고 자유롭게 상상하도록 돕는 것이다.",
+        "원전 줄거리, 실제 결말, 실제 인물 관계, 정답, 작품 해설은 절대 알려주지 않는다.",
+        "학생이 준 상상 요소만 바탕으로 이야기를 만든다.",
+        "학생의 표현을 최대한 살리고, 초등학생에게 자연스러운 한국어로 쓴다.",
+        "반드시 JSON object만 출력한다.",
+        "공통 형식: {\"guideText\": string, \"scenarioText\": string, \"nanoBananaPrompt\": null 또는 {\"mood\": string, \"scene\": string, \"colors\": string, \"ko\": string, \"en\": string}}",
+        "draft 또는 revise action에서는 scenarioText를 5~7문장으로 완성하고 nanoBananaPrompt는 null로 둔다.",
+        "prompt action에서는 scenarioText를 유지하고 nanoBananaPrompt를 완성한다.",
+        "나노바나나 프롬프트는 한국어 설명과 영어 프롬프트를 모두 포함한다.",
+        "한국어 설명에는 분위기, 그림 내용, 색감, 표지에 넣을 제목 글자를 포함한다."
+      ].join("\n")
+    },
+    {
+      role: "user",
+      content: [
+        formatStudentLine(payload.student),
+        `책 제목: ${bookTitle}`,
+        `요청 action: ${action}`,
+        "",
+        "학생이 상상한 핵심 3항목:",
+        `- 등장인물: ${answers.character || "아직 없음"}`,
+        `- 배경: ${answers.setting || "아직 없음"}`,
+        `- 무슨 일: ${answers.event || "아직 없음"}`,
+        "",
+        `현재 시나리오: ${payload.scenarioText || "아직 없음"}`,
+        `수정 방향: ${payload.revisionLabel || payload.customRequest || "없음"}`,
+        "",
+        formatConversation(payload.conversation),
+        "",
+        action === "prompt"
+          ? "확정된 시나리오에 어울리는 책 표지용 나노바나나 프롬프트를 만들어 줘. 제목 글자는 반드시 책 제목 그대로 넣어 줘."
+          : "학생의 상상 요소를 살려 짧고 생생한 가상 시나리오를 만들어 줘. 원전 내용은 절대 알려주지 마."
       ].join("\n")
     }
   ];
@@ -156,5 +203,6 @@ function buildAssessmentMessages(payload) {
 module.exports = {
   buildAssessmentMessages,
   buildAnswerCheckMessages,
+  buildTitleScenarioMessages,
   buildTurnMessages
 };

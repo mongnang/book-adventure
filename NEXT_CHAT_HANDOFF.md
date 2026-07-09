@@ -7,11 +7,10 @@
 
 ## 현재 상태
 
-- 로컬 저장소는 `origin/main`보다 앞서 있음.
-- 이미 만든 로컬 커밋:
+- 이전에 푸시 완료한 커밋:
   - `df53130 Add title scenario activity flow`
-- 이전에 GitHub push를 시도했지만, Codex 사용량 한도 때문에 승인 단계에서 막혔음.
-- 이번 파일은 진행상황을 남기기 위해 추가한 인수인계 문서임.
+  - `dc3845e Add project handoff notes`
+- 이후 활동 1에 Azure OpenAI 연결 작업을 진행 중임.
 
 ## 지금까지 구현한 주요 내용
 
@@ -50,6 +49,14 @@
    - 나노바나나용 한국어 프롬프트
    - 나노바나나용 영어 프롬프트
    - 선생님께 제출 버튼
+
+추가 변경:
+
+- 활동 1의 시나리오 생성, 수정본 생성, 나노바나나 프롬프트 생성을 Azure OpenAI에 연결함.
+- 새 API route: `/api/adventure/title-scenario-turn`
+- 새 Azure Function 파일: `my-webapp/api/src/functions/title-scenario-turn.js`
+- 서버가 실패하거나 AI 설정이 없으면 기존 로컬 생성 방식으로 임시 fallback함.
+- 활동 1 AI 요청 payload에는 학생 정보, 책 정보, 현재 action, 학생 답변 3항목, 현재 시나리오, 최근 활동 1 대화가 포함됨.
 
 ### 활동 2: 질문과 단서로 추리하기
 
