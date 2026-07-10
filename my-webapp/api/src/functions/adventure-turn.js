@@ -1,6 +1,5 @@
 const { app } = require("@azure/functions");
-const { badRequest, json, readJson } = require("../shared/http");
-const { buildPracticeAnswer } = require("../shared/demo");
+const { aiUnavailable, badRequest, json, readJson } = require("../shared/http");
 const { completeChat, isOpenAIConfigured } = require("../shared/openai");
 const { buildTurnMessages } = require("../shared/prompts");
 const { saveAdventureEvent } = require("../shared/store");
@@ -16,31 +15,19 @@ app.http("adventureTurn", {
       return badRequest("book.id and question are required.");
     }
 
-    let answer;
-    let mode = "practice";
-    let openAIError = "";
+    if (!isOpenAIConfigured()) return aiUnavailable();
 
-    if (isOpenAIConfigured()) {
-      try {
-        const aiAnswer = await completeChat(buildTurnMessages(payload), {
-          temperature: 0.45,
-          maxTokens: 1400
-        });
-        if (aiAnswer && aiAnswer.trim()) {
-          answer = aiAnswer.trim();
-          mode = "azure-openai";
-        } else {
-          openAIError = "Azure OpenAI returned an empty answer.";
-          context.log(`Azure OpenAI fallback: ${openAIError}`);
-        }
-      } catch (error) {
-        openAIError = error.message;
-        context.log(`Azure OpenAI fallback: ${openAIError}`);
-      }
-    }
-
-    if (!answer) {
-      answer = buildPracticeAnswer(payload);
+    let answer = "";
+    try {
+      const aiAnswer = await completeChat(buildTurnMessages(payload), {
+        temperature: 0.45,
+        maxTokens: 1400
+      });
+      answer = String(aiAnswer || "").trim();
+      if (!answer) throw new Error("Azure OpenAI returned an empty answer.");
+    } catch (error) {
+      context.log(`Azure OpenAI turn failed: ${error.message}`);
+      return aiUnavailable();
     }
 
     await saveAdventureEvent({
@@ -55,13 +42,12 @@ app.http("adventureTurn", {
       conversation: Array.isArray(payload.conversation) ? payload.conversation.slice(-12) : [],
       question: payload.question || payload.rawQuestion,
       answer,
-      mode
+      mode: "azure-openai"
     }, context);
 
     return json(200, {
       answer,
-      mode,
-      openAIError: openAIError ? openAIError.slice(0, 700) : "",
+      mode: "azure-openai",
       sessionId: payload.sessionId || null
     });
   }

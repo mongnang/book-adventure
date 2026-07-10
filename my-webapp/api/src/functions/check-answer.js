@@ -1,5 +1,5 @@
 const { app } = require("@azure/functions");
-const { badRequest, json, readJson } = require("../shared/http");
+const { aiUnavailable, badRequest, json, readJson } = require("../shared/http");
 const { checkKnownAnswer } = require("../shared/demo");
 const { completeChat, isOpenAIConfigured } = require("../shared/openai");
 const { buildAnswerCheckMessages } = require("../shared/prompts");
@@ -32,9 +32,11 @@ app.http("checkAnswer", {
     }
 
     let result = checkKnownAnswer(payload);
-    let mode = result ? "known-rule" : "practice";
+    let mode = result ? "known-rule" : "azure-openai";
 
-    if (!result && isOpenAIConfigured()) {
+    if (!result && !isOpenAIConfigured()) return aiUnavailable();
+
+    if (!result) {
       try {
         const text = await completeChat(buildAnswerCheckMessages(payload), {
           temperature: 0.1,
@@ -47,18 +49,13 @@ app.http("checkAnswer", {
             correct: Boolean(parsed.correct),
             message: String(parsed.message || "답을 확인했어요.")
           };
-          mode = "azure-openai";
+        } else {
+          throw new Error("Azure OpenAI returned an invalid answer check.");
         }
       } catch (error) {
-        context.log(`Azure OpenAI answer-check fallback: ${error.message}`);
+        context.log(`Azure OpenAI answer check failed: ${error.message}`);
+        return aiUnavailable();
       }
-    }
-
-    if (!result) {
-      result = {
-        correct: false,
-        message: "이 책은 아직 자동 정답 규칙이 준비되지 않았어요. Azure AI Search로 원전 연결을 붙인 뒤 더 정확히 확인할 수 있어요."
-      };
     }
 
     await saveAdventureEvent({

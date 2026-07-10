@@ -259,6 +259,7 @@ const STUDENT_PROFILE_KEY = "book-adventure-student-profile";
 const CONVERSATION_LOG_KEY = "book-adventure-conversation-log";
 const TITLE_SCENARIO_SUBMISSIONS_KEY = "book-adventure-title-scenario-submissions";
 const GUIDE_CHARACTER_IMAGE = "./assets/characters/rabbit-librarian.png";
+const AI_UNAVAILABLE_MESSAGE = "AI와 연결이 불안정합니다. 다시 시도해보세요.";
 
 const heroScreen = document.querySelector("#heroScreen");
 const profileScreen = document.querySelector("#profileScreen");
@@ -340,7 +341,6 @@ const characterChatBackButton = document.querySelector("#characterChatBackButton
 const characterChatBookTitle = document.querySelector("#characterChatBookTitle");
 const characterChatIntro = document.querySelector("#characterChatIntro");
 const characterChatProfileGrid = document.querySelector("#characterChatProfileGrid");
-const characterChatPersona = document.querySelector("#characterChatPersona");
 const characterChatLog = document.querySelector("#characterChatLog");
 const characterChatForm = document.querySelector("#characterChatForm");
 const characterChatInput = document.querySelector("#characterChatInput");
@@ -1013,6 +1013,40 @@ function normalizeTeacherRecord(record) {
   };
 }
 
+function buildTeacherParticipations(records) {
+  const groups = new Map();
+
+  records.forEach((record) => {
+    const key = record.sessionId || "legacy-records";
+    if (!groups.has(key)) {
+      groups.set(key, {
+        sessionId: record.sessionId || "",
+        startedAt: record.createdAt || "",
+        latestAt: record.createdAt || "",
+        records: []
+      });
+    }
+
+    const group = groups.get(key);
+    group.records.push(record);
+    if (!group.startedAt || String(record.createdAt).localeCompare(String(group.startedAt)) < 0) {
+      group.startedAt = record.createdAt;
+    }
+    if (!group.latestAt || String(record.createdAt).localeCompare(String(group.latestAt)) > 0) {
+      group.latestAt = record.createdAt;
+    }
+  });
+
+  return Array.from(groups.values())
+    .sort((a, b) => String(a.startedAt).localeCompare(String(b.startedAt)))
+    .map((group, index) => ({
+      ...group,
+      participationNumber: index + 1,
+      recordCount: group.records.length,
+      bookTitles: Array.from(new Set(group.records.map((record) => record.bookTitle).filter(Boolean)))
+    }));
+}
+
 function normalizeTeacherStudentGroup(group) {
   const records = Array.isArray(group.records) ? group.records.map(normalizeTeacherRecord).sort(compareTeacherCreatedAt) : [];
   const nicknames = new Set(Array.isArray(group.nicknames) ? group.nicknames : []);
@@ -1034,6 +1068,8 @@ function normalizeTeacherStudentGroup(group) {
   normalized.activity3Count = records.filter((record) => getTeacherRecordActivity(record) === "activity3").length;
   normalized.assessmentCount = records.filter((record) => record.type === "conversationAssessment").length;
   normalized.recordCount = records.length;
+  normalized.participations = buildTeacherParticipations(records);
+  normalized.participationCount = normalized.participations.length;
   return normalized;
 }
 
@@ -1131,12 +1167,14 @@ function getVisibleTeacherStudents() {
 
 function renderTeacherSummary() {
   const recordCount = teacherState.students.reduce((sum, student) => sum + student.recordCount, 0);
+  const participationCount = teacherState.students.reduce((sum, student) => sum + student.participationCount, 0);
   const activity1Count = teacherState.students.reduce((sum, student) => sum + student.activity1Count, 0);
   const activity2Count = teacherState.students.reduce((sum, student) => sum + student.activity2Count, 0);
   const activity3Count = teacherState.students.reduce((sum, student) => sum + student.activity3Count, 0);
   const assessmentCount = teacherState.students.reduce((sum, student) => sum + student.assessmentCount, 0);
   const summaryItems = [
     ["학생", teacherState.students.length],
+    ["참여 횟수", participationCount],
     ["전체 기록", recordCount],
     ["활동 1 기록", activity1Count],
     ["활동 2 기록", activity2Count],
@@ -1186,7 +1224,7 @@ function renderTeacherStudentList() {
     const nickname = document.createElement("span");
     nickname.textContent = student.nickname || "닉네임 없음";
     const meta = document.createElement("small");
-    meta.textContent = `활동 1 ${student.activity1Count}개 · 활동 2 ${student.activity2Count}개 · 활동 3 ${student.activity3Count}개 · 최근 ${teacherShortDate(student.latestAt)}`;
+    meta.textContent = `참여 ${student.participationCount}회 · 활동 1 ${student.activity1Count}개 · 활동 2 ${student.activity2Count}개 · 활동 3 ${student.activity3Count}개 · 최근 ${teacherShortDate(student.latestAt)}`;
     button.append(title, nickname, meta);
     teacherStudentList.appendChild(button);
   });
@@ -1285,9 +1323,14 @@ function teacherCsvEscape(value) {
   return `"${String(value ?? "").replace(/"/g, '""').replace(/\r?\n/g, " ").trim()}"`;
 }
 
+function getTeacherRecordParticipationNumber(student, record) {
+  return student.participations.find((participation) => participation.records.includes(record))?.participationNumber || "";
+}
+
 function buildTeacherCsv(student, records) {
-  const header = ["createdAt", "type", "class", "number", "nickname", "book", "character", "question", "answer", "score", "summary", "nextStep", "scenarioText", "prompt"];
+  const header = ["participation", "createdAt", "type", "class", "number", "nickname", "book", "character", "question", "answer", "score", "summary", "nextStep", "scenarioText", "prompt"];
   const rows = records.map((record) => [
+    getTeacherRecordParticipationNumber(student, record),
     record.createdAt,
     record.typeLabel,
     student.className,
@@ -1348,6 +1391,47 @@ function renderTeacherActivityTabs(student) {
   return container;
 }
 
+function renderTeacherParticipations(student, records) {
+  const container = document.createElement("div");
+  container.className = "teacher-participation-list";
+  const participationBySession = new Map(
+    student.participations.map((participation) => [participation.sessionId || "legacy-records", participation])
+  );
+  const groups = buildTeacherParticipations(records)
+    .map((group) => participationBySession.get(group.sessionId || "legacy-records") || group)
+    .filter((group) => group.records.some((record) => records.includes(record)))
+    .map((group) => ({
+      ...group,
+      records: group.records.filter((record) => records.includes(record))
+    }))
+    .sort((a, b) => Number(b.participationNumber || 0) - Number(a.participationNumber || 0));
+
+  groups.forEach((participation, index) => {
+    const details = document.createElement("details");
+    details.className = "teacher-participation";
+    details.open = index === 0;
+
+    const summary = document.createElement("summary");
+    summary.className = "teacher-participation-summary";
+    const title = document.createElement("strong");
+    title.textContent = `${participation.participationNumber || 1}번째 참여`;
+    const date = document.createElement("span");
+    date.textContent = teacherShortDate(participation.startedAt);
+    const meta = document.createElement("small");
+    const books = Array.from(new Set(participation.records.map((record) => record.bookTitle).filter(Boolean)));
+    meta.textContent = `${participation.records.length}개 기록${books.length ? ` · ${books.join(", ")}` : ""}`;
+    summary.append(title, date, meta);
+
+    const recordList = document.createElement("div");
+    recordList.className = "teacher-participation-records";
+    participation.records.forEach((record) => recordList.appendChild(renderTeacherRecord(record)));
+    details.append(summary, recordList);
+    container.appendChild(details);
+  });
+
+  return container;
+}
+
 function renderTeacherStudentDetail() {
   const student = teacherState.students.find((item) => item.studentKey === teacherState.selectedStudentKey);
   teacherStudentDetail.innerHTML = "";
@@ -1374,7 +1458,7 @@ function renderTeacherStudentDetail() {
   const title = document.createElement("h3");
   title.textContent = `${student.className || "-"}반 ${student.number || "-"}번 ${student.nickname || ""}`;
   const meta = document.createElement("p");
-  meta.textContent = `누적 기록 ${student.recordCount}개 · 활동 1 ${student.activity1Count}개 · 활동 2 ${student.activity2Count}개 · 활동 3 ${student.activity3Count}개 · 평가 ${student.assessmentCount}개`;
+  meta.textContent = `참여 ${student.participationCount}회 · 누적 기록 ${student.recordCount}개 · 활동 1 ${student.activity1Count}개 · 활동 2 ${student.activity2Count}개 · 활동 3 ${student.activity3Count}개 · 평가 ${student.assessmentCount}개`;
   headerText.append(kicker, title, meta);
   header.appendChild(headerText);
 
@@ -1398,21 +1482,18 @@ function renderTeacherStudentDetail() {
   const timelineNote = document.createElement("p");
   timelineNote.className = "teacher-timeline-note";
   timelineNote.textContent = teacherState.selectedActivityTab === "all"
-    ? "전체 기록은 시간순으로 보입니다. 활동별로 보려면 탭을 선택하세요."
-    : `${teacherActivityTabLabels[teacherState.selectedActivityTab]} 기록만 보고 있습니다.`;
+    ? "참여 회차를 눌러 기록을 열거나 닫을 수 있습니다. 활동별로 보려면 탭을 선택하세요."
+    : `${teacherActivityTabLabels[teacherState.selectedActivityTab]} 기록을 참여 회차별로 보고 있습니다.`;
   teacherStudentDetail.appendChild(timelineNote);
 
-  const timeline = document.createElement("div");
-  timeline.className = "teacher-timeline";
   if (!filteredRecords.length) {
     const empty = document.createElement("p");
     empty.className = "teacher-empty-state";
     empty.textContent = "이 탭에는 아직 기록이 없습니다.";
-    timeline.appendChild(empty);
+    teacherStudentDetail.appendChild(empty);
   } else {
-    filteredRecords.forEach((record) => timeline.appendChild(renderTeacherRecord(record)));
+    teacherStudentDetail.appendChild(renderTeacherParticipations(student, filteredRecords));
   }
-  teacherStudentDetail.appendChild(timeline);
 }
 
 function renderTeacherDashboard() {
@@ -1653,86 +1734,22 @@ async function requestTitleScenarioAI(action, extra = {}) {
   });
 }
 
-function buildTitleScenarioText() {
-  const { character, setting, event } = titleScenarioActivity.answers;
-  const title = selectedBook.title;
-
-  return [
-    `「${title}」라는 제목을 들으면, ${setting}에서 ${character}이(가) 조용한 변화를 만나는 장면이 떠올라요.`,
-    `그곳에서는 ${event} 일이 벌어지고, 처음에는 아무도 그 일을 크게 여기지 않아요.`,
-    `하지만 ${character}은(는) 작은 단서 하나를 발견하고, 그 단서가 제목 속 말과 이어져 있다는 것을 느껴요.`,
-    `이야기가 깊어질수록 평범해 보이던 장소가 비밀을 품은 공간처럼 보이기 시작해요.`,
-    `${character}은(는) 두려움과 궁금함 사이에서 망설이지만, 결국 스스로 답을 찾아 나서요.`,
-    `마지막에는 제목의 뜻이 새롭게 다가오고, 독자는 처음과는 다른 마음으로 그 장면을 바라보게 돼요.`
-  ].join(" ");
-}
-
-function buildRevisedTitleScenarioText(revisionId, customRequest = "") {
-  const { character, setting, event } = titleScenarioActivity.answers;
-  const title = selectedBook.title;
-
-  if (revisionId === "adventure") {
-    return [
-      `「${title}」 속 ${character}은(는) ${setting}에서 ${event} 일이 시작되자 곧바로 단서를 따라 달려가요.`,
-      `낡은 표식과 이상한 소리가 길을 열고, 한 장면이 끝날 때마다 새로운 선택이 나타나요.`,
-      `${character}은(는) 겁이 나도 멈추지 않고, 제목 속에 숨은 장소를 찾아 한 걸음씩 나아가요.`,
-      `가장 위험한 순간에는 처음에 지나쳤던 작은 단서가 길을 밝혀 줘요.`,
-      `마침내 비밀의 문이 열리고, ${character}은(는) 자신이 상상보다 더 용감하다는 것을 알게 돼요.`,
-      `이 표지는 달빛 아래 펼쳐진 모험의 첫 장면처럼 그려지면 잘 어울려요.`
-    ].join(" ");
-  }
-
-  if (revisionId === "warm") {
-    return [
-      `「${title}」는 ${setting}에서 ${character}이(가) 잊고 있던 마음을 되찾는 이야기로 펼쳐져요.`,
-      `${event} 일이 벌어지면서 모두가 조금씩 흔들리지만, 서로를 걱정하는 마음도 함께 드러나요.`,
-      `${character}은(는) 누군가의 작은 말과 따뜻한 행동을 통해 제목의 의미를 새롭게 느껴요.`,
-      `큰 사건보다 조용한 눈빛, 손을 내미는 순간, 함께 걷는 길이 더 오래 남아요.`,
-      `마지막에는 모든 문제가 완벽히 사라지지는 않아도, 서로를 이해하려는 마음이 남아요.`,
-      `이 표지는 부드러운 빛 속에서 인물들이 한 장면에 머무는 느낌이면 잘 어울려요.`
-    ].join(" ");
-  }
-
-  if (revisionId === "twist") {
-    return [
-      `「${title}」에서 ${character}은(는) ${setting}에 숨겨진 이상한 규칙을 발견해요.`,
-      `${event} 일은 처음에는 우연처럼 보이지만, 사실 누군가 오래전부터 남겨 둔 신호였어요.`,
-      `${character}이(가) 단서를 모을수록 믿었던 사실이 하나씩 뒤집히고, 제목도 전혀 다른 뜻으로 보이기 시작해요.`,
-      `가장 평범해 보이던 인물이 뜻밖의 열쇠를 쥐고 있다는 사실이 드러나요.`,
-      `마지막 장면에서는 처음 문장으로 돌아가야만 비밀이 풀리는 반전이 생겨요.`,
-      `이 표지는 어둡지만 아름다운 색감과 의미심장한 표정이 살아 있으면 잘 어울려요.`
-    ].join(" ");
-  }
-
-  return [
-    `「${title}」는 ${setting}에서 ${character}이(가) ${event} 일을 마주하며 시작돼요.`,
-    `학생이 덧붙인 방향은 “${customRequest}”이므로, 이야기의 분위기도 그쪽으로 조금 더 기울어져요.`,
-    `${character}은(는) 사건 속에서 그냥 지나칠 수 없는 단서를 발견하고, 제목에 숨은 의미를 생각하게 돼요.`,
-    `주변 인물과 장소는 그 선택을 더 어렵게 만들지만, 동시에 앞으로 나아갈 힘도 줘요.`,
-    `마지막에는 처음 떠올린 상상보다 더 분명한 장면이 남고, 표지로 그리고 싶은 순간도 또렷해져요.`,
-    `이제 이 이야기를 바탕으로 책 표지를 만들 수 있어요.`
-  ].join(" ");
-}
-
 async function createTitleScenarioDraft() {
   setTitleScenarioBusy(true);
 
   try {
     const result = await requestTitleScenarioAI("draft");
-    titleScenarioActivity.scenario = String(result?.scenarioText || "").trim() || buildTitleScenarioText();
+    const scenarioText = String(result?.scenarioText || "").trim();
+    if (!scenarioText) throw new Error(AI_UNAVAILABLE_MESSAGE);
+    titleScenarioActivity.scenario = scenarioText;
     appendTitleScenarioMessage("guide", result?.guideText || "좋아. 네가 상상한 세 가지를 살려서 짧은 가상 줄거리로 만들어 봤어.");
     appendTitleScenarioMessage("guide", titleScenarioActivity.scenario);
-
-    if (result?.mode && result.mode !== "azure-openai" && result.openAIError) {
-      appendTitleScenarioMessage("guide", "지금은 AI 연결이 불안정해서 임시 방식으로 이야기를 정리했어. 그래도 이어서 수정해 볼 수 있어.");
-    }
-  } catch (error) {
-    titleScenarioActivity.scenario = buildTitleScenarioText();
-    appendTitleScenarioMessage("guide", "지금은 AI 연결이 잠깐 불안정해서 임시 방식으로 이야기를 정리했어.");
-    appendTitleScenarioMessage("guide", titleScenarioActivity.scenario);
-  } finally {
     titleScenarioActivity.stage = "review";
     appendTitleScenarioMessage("guide", "이 이야기를 어떻게 바꿔볼까? 아래 보기에서 고르거나, 직접 바꾸고 싶은 점을 써 줘.");
+  } catch (error) {
+    titleScenarioActivity.stage = "event";
+    appendTitleScenarioMessage("guide", AI_UNAVAILABLE_MESSAGE);
+  } finally {
     titleScenarioActivity.busy = false;
     renderTitleScenarioActivity();
   }
@@ -1797,50 +1814,18 @@ async function reviseTitleScenario(revisionId, customRequest = "") {
       revisionLabel: label,
       customRequest
     });
-    titleScenarioActivity.scenario = String(result?.scenarioText || "").trim() || buildRevisedTitleScenarioText(revisionId, customRequest);
+    const scenarioText = String(result?.scenarioText || "").trim();
+    if (!scenarioText) throw new Error(AI_UNAVAILABLE_MESSAGE);
+    titleScenarioActivity.scenario = scenarioText;
     appendTitleScenarioMessage("guide", result?.guideText || "좋아. 그 방향으로 다시 고쳐 쓴 시나리오야.");
     appendTitleScenarioMessage("guide", titleScenarioActivity.scenario);
-
-    if (result?.mode && result.mode !== "azure-openai" && result.openAIError) {
-      appendTitleScenarioMessage("guide", "AI 연결이 잠깐 불안정해서 임시 방식으로 고쳐 썼어.");
-    }
-  } catch (error) {
-    titleScenarioActivity.scenario = buildRevisedTitleScenarioText(revisionId, customRequest);
-    appendTitleScenarioMessage("guide", "지금은 AI 연결이 잠깐 불안정해서 임시 방식으로 고쳐 썼어.");
-    appendTitleScenarioMessage("guide", titleScenarioActivity.scenario);
-  } finally {
     appendTitleScenarioMessage("guide", "마음에 들면 확정하고, 더 바꾸고 싶으면 다시 골라 줘.");
+  } catch (error) {
+    appendTitleScenarioMessage("guide", AI_UNAVAILABLE_MESSAGE);
+  } finally {
     titleScenarioActivity.busy = false;
     renderTitleScenarioActivity();
   }
-}
-
-function normalizePromptPart(text, maxLength = 180) {
-  const value = String(text || "").replace(/\s+/g, " ").trim();
-  return value.length > maxLength ? `${value.slice(0, maxLength - 3)}...` : value;
-}
-
-function buildNanoBananaPrompt() {
-  const revision = titleScenarioRevisionChoices.find((choice) => choice.id === titleScenarioActivity.lastRevisionId);
-  const mood = revision?.mood || titleScenarioActivity.lastRevisionLabel || "따뜻하고 신비로운";
-  const colors = revision?.colors || "달빛 금색, 짙은 갈색, 부드러운 크림색";
-  const { character, setting, event } = titleScenarioActivity.answers;
-  const scene = `${setting}에서 ${character}이(가) ${event} 일의 단서를 마주하는 장면`;
-  const title = selectedBook.title;
-
-  return {
-    mood,
-    scene,
-    colors,
-    ko: [
-      "[한국어 설명]",
-      `- 분위기: ${mood}`,
-      `- 그림 내용: ${scene}. ${normalizePromptPart(titleScenarioActivity.scenario, 150)}`,
-      `- 색감: ${colors}`,
-      `- 표지에 넣을 제목 글자: "${title}"`
-    ].join("\n"),
-    en: `A book cover illustration of ${normalizePromptPart(scene, 120)}, ${mood}, ${colors}, with the title text "${title}" in an elegant storybook lettering style, children's book art.`
-  };
 }
 
 function normalizeNanoBananaPrompt(prompt) {
@@ -1864,7 +1849,8 @@ async function createNanoBananaPromptWithAI() {
       revisionLabel: titleScenarioActivity.lastRevisionLabel || ""
     });
     const prompt = normalizeNanoBananaPrompt(result?.nanoBananaPrompt);
-    titleScenarioActivity.prompt = prompt?.ko && prompt?.en ? prompt : buildNanoBananaPrompt();
+    if (!prompt?.ko || !prompt?.en) throw new Error(AI_UNAVAILABLE_MESSAGE);
+    titleScenarioActivity.prompt = prompt;
 
     if (result?.scenarioText) {
       titleScenarioActivity.scenario = String(result.scenarioText).trim();
@@ -1874,12 +1860,9 @@ async function createNanoBananaPromptWithAI() {
       appendTitleScenarioMessage("guide", result.guideText);
     }
 
-    if (result?.mode && result.mode !== "azure-openai" && result.openAIError) {
-      appendTitleScenarioMessage("guide", "AI 연결이 잠깐 불안정해서 임시 방식으로 프롬프트를 만들었어.");
-    }
   } catch (error) {
-    titleScenarioActivity.prompt = buildNanoBananaPrompt();
-    appendTitleScenarioMessage("guide", "지금은 AI 연결이 잠깐 불안정해서 임시 방식으로 표지 프롬프트를 만들었어.");
+    titleScenarioActivity.prompt = null;
+    appendTitleScenarioMessage("guide", AI_UNAVAILABLE_MESSAGE);
   } finally {
     titleScenarioActivity.busy = false;
     renderTitleScenarioActivity();
@@ -2173,38 +2156,6 @@ function renderCharacterChatProfiles() {
   });
 }
 
-function renderCharacterChatPersona() {
-  characterChatPersona.innerHTML = "";
-  const character = characterChatActivity?.selectedCharacter;
-
-  if (!character) {
-    const empty = document.createElement("p");
-    empty.className = "teacher-empty-state";
-    empty.textContent = "왼쪽에서 인물을 고르면 대화가 시작됩니다.";
-    characterChatPersona.appendChild(empty);
-    return;
-  }
-
-  const rules = getCharacterChatRules(selectedBook, character);
-  const title = document.createElement("div");
-  title.className = "character-chat-persona-title";
-  title.append(
-    createTextElement("strong", "", character.name),
-    createTextElement("span", "", character.role)
-  );
-
-  const style = createTextElement("p", "", rules.speechStyle);
-  const perspective = createTextElement("p", "", rules.perspective);
-  const ruleList = document.createElement("ul");
-  rules.boundaries.slice(0, 3).forEach((rule) => {
-    const item = document.createElement("li");
-    item.textContent = rule;
-    ruleList.appendChild(item);
-  });
-
-  characterChatPersona.append(title, style, perspective, ruleList);
-}
-
 function renderCharacterChatLog() {
   characterChatLog.innerHTML = "";
   const messages = characterChatActivity?.messages || [];
@@ -2236,7 +2187,6 @@ function renderCharacterChatActivity() {
   characterChatBookTitle.textContent = selectedBook.title;
   characterChatIntro.textContent = `「${selectedBook.title}」의 주요 인물 중 한 명을 골라 직접 대화해 보세요.`;
   renderCharacterChatProfiles();
-  renderCharacterChatPersona();
   renderCharacterChatLog();
   characterChatInput.disabled = !characterChatActivity.selectedCharacter || characterChatActivity.busy;
   characterChatSubmitButton.disabled = !characterChatActivity.selectedCharacter || characterChatActivity.busy;
@@ -2259,25 +2209,12 @@ function selectCharacterChatCharacter(index) {
   window.setTimeout(() => characterChatInput.focus(), 80);
 }
 
-function buildLocalCharacterReply(message, character, rules) {
-  return [
-    `${character.name}: ${rules.speechStyle.split(".")[0].trim()} 마음으로 대답해 볼게요.`,
-    `네가 물은 “${message}”는 그냥 지나칠 질문이 아니에요.`,
-    "내가 본 장면과 마음을 떠올리면, 말보다 행동 속에 더 많은 뜻이 숨어 있었어요.",
-    "너는 그 장면에서 어떤 행동이 가장 이상하게 느껴졌나요?"
-  ].join("\n");
-}
-
 async function requestCharacterChatReply(payload) {
   if (typeof window.talkToBookCharacter === "function") {
     return window.talkToBookCharacter(payload);
   }
 
-  await new Promise((resolve) => window.setTimeout(resolve, 450));
-  return {
-    reply: buildLocalCharacterReply(payload.message, payload.character, payload.characterRules || {}),
-    mode: "practice"
-  };
+  throw new Error(AI_UNAVAILABLE_MESSAGE);
 }
 
 async function submitCharacterChatMessage(text) {
@@ -2317,14 +2254,11 @@ async function submitCharacterChatMessage(text) {
 
   try {
     const result = await requestCharacterChatReply(payload);
-    const reply = String(result?.reply || result?.answer || "").trim() || buildLocalCharacterReply(message, character, rules);
+    const reply = String(result?.reply || result?.answer || "").trim();
+    if (!reply) throw new Error(AI_UNAVAILABLE_MESSAGE);
     appendCharacterChatMessage("character", reply, character);
-
-    if (result?.mode && result.mode !== "azure-openai" && result.openAIError) {
-      appendCharacterChatMessage("character", "방금은 연결이 조금 불안정해서 짧게만 대답했어요. 다시 물어봐도 좋아요.", character);
-    }
   } catch (error) {
-    appendCharacterChatMessage("character", buildLocalCharacterReply(message, character, rules), character);
+    appendCharacterChatMessage("character", AI_UNAVAILABLE_MESSAGE, character);
   } finally {
     characterChatActivity.busy = false;
     renderCharacterChatActivity();
@@ -2780,47 +2714,12 @@ function moveToPreviousScreen() {
   }
 }
 
-function buildDemoAnswer({ question, category, book, character, place }) {
-  const guideByCategory = {
-    mind: "인물의 마음은 말로 직접 드러나기도 하지만, 망설임이나 행동 속에 숨어 있기도 해요.",
-    place: "장소는 배경처럼 보이지만, 인물의 기억과 마음, 숨은 단서를 보여주는 중요한 장면이에요."
-  };
-
-  const guide = guideByCategory[category.id] || "작품 속 근거를 하나씩 짚어 보면 답을 더 단단하게 만들 수 있어요.";
-
-  return [
-    "좋은 질문이에요. 이 단서는 그냥 넘기기 아까워요.",
-    [character ? `인물: ${character.name}` : "", place ? `장소: ${place.name}` : ""].filter(Boolean).join(" / "),
-    guide,
-    "그 장면에서 인물이 본 것, 들은 말, 한 행동 중 무엇이 가장 눈에 띄나요?"
-  ].filter(Boolean).join("\n");
-}
-
 async function requestAgentAnswer(payload) {
   if (typeof window.sendReadingQuestionToAgent === "function") {
     return window.sendReadingQuestionToAgent(payload);
   }
 
-  await new Promise((resolve) => window.setTimeout(resolve, 450));
-  return buildDemoAnswer(payload);
-}
-
-function buildDemoAnswerCheck({ answer, book }) {
-  const rule = getFinalAnswerRule(book);
-  const normalizedAnswer = normalizeAnswerText(answer);
-  const correct = rule.keywords.every((keyword) => normalizedAnswer.includes(normalizeAnswerText(keyword)));
-
-  if (correct) {
-    return {
-      correct: true,
-      message: `정답이에요! 핵심은 “${rule.answer}”라고 볼 수 있어요. 질문으로 모은 단서를 잘 이어 붙였어요.`
-    };
-  }
-
-  return {
-    correct: false,
-    message: "아직 정답이라고 보기는 어려워요. 질문을 더 골라서 인물의 마음과 장소 단서를 조금 더 모아 보세요."
-  };
+  throw new Error(AI_UNAVAILABLE_MESSAGE);
 }
 
 async function requestAnswerCheck(payload) {
@@ -2828,72 +2727,7 @@ async function requestAnswerCheck(payload) {
     return window.checkReadingAnswerWithAgent(payload);
   }
 
-  await new Promise((resolve) => window.setTimeout(resolve, 450));
-  return buildDemoAnswerCheck(payload);
-}
-
-function buildLocalAssessmentNextStep(payload = {}) {
-  const conversation = Array.isArray(payload.conversation) ? payload.conversation : [];
-  const userTurns = conversation.filter((entry) => entry.role === "user").length;
-  const cluesFound = Number(payload.progress?.cluesFound || payload.cluesFound || 0);
-  const solved = Boolean(payload.progress?.solved || payload.correct);
-  const answer = String(payload.answer || "").trim();
-  const bookTitle = payload.book?.title || selectedBook?.title || "이 책";
-
-  if (!userTurns) {
-    return "다음에는 먼저 인물 질문이나 장소 질문을 하나 골라 단서를 모아 보세요.";
-  }
-
-  if (!solved && cluesFound < 2) {
-    return "다음에는 인물의 마음 질문과 장소 질문을 각각 하나씩 골라 단서를 비교해 보세요.";
-  }
-
-  if (!solved) {
-    return "다음에는 모은 단서 중 가장 중요한 장면 하나를 골라 결론과 연결해 보세요.";
-  }
-
-  if (answer) {
-    return `다음에는 「${bookTitle}」에서 그 답을 떠올리게 한 장면을 한 문장으로 덧붙여 보세요.`;
-  }
-
-  return `다음에는 「${bookTitle}」의 결론을 말하기 전에 가장 결정적인 단서를 먼저 짚어 보세요.`;
-}
-
-function buildLocalAssessment(payload = {}) {
-  const conversation = Array.isArray(payload.conversation) ? payload.conversation : [];
-  const userTurns = conversation.filter((entry) => entry.role === "user").length;
-  const cluesFound = Number(payload.progress?.cluesFound || payload.cluesFound || 0);
-  const solved = Boolean(payload.progress?.solved || payload.correct);
-  const inquiryScore = Math.min(5, Math.max(2, userTurns + Math.min(2, cluesFound)));
-  const conclusionScore = solved ? 5 : Math.min(4, Math.max(2, cluesFound + 1));
-  const scores = [
-    {
-      id: "inquiry",
-      label: "질문 태도",
-      score: inquiryScore,
-      comment: userTurns > 2
-        ? "스스로 질문을 이어 가며 단서를 확인하려는 태도가 좋아요."
-        : "질문을 조금 더 이어 가면 인물과 장소 단서를 더 넓게 볼 수 있어요."
-    },
-    {
-      id: "conclusion",
-      label: "추리 결론",
-      score: conclusionScore,
-      comment: solved
-        ? "마지막 추리가 핵심 단서와 잘 이어졌어요."
-        : "결론을 말할 때 가장 중요한 장면을 함께 붙이면 더 단단해져요."
-    }
-  ];
-
-  return {
-    totalScore: scores.reduce((sum, item) => sum + item.score, 0),
-    maxScore: 10,
-    scores,
-    summary: solved
-      ? "오늘은 질문으로 단서를 모으고 마지막 결론까지 잘 이어 갔어요."
-      : "오늘은 질문으로 단서를 모으는 흐름을 따라왔고, 결론을 더 단단하게 만들 준비가 되었어요.",
-    nextStep: buildLocalAssessmentNextStep(payload)
-  };
+  throw new Error(AI_UNAVAILABLE_MESSAGE);
 }
 
 async function requestConversationAssessment(payload) {
@@ -2901,8 +2735,7 @@ async function requestConversationAssessment(payload) {
     return window.assessAdventureConversation(payload);
   }
 
-  await new Promise((resolve) => window.setTimeout(resolve, 450));
-  return buildLocalAssessment(payload);
+  throw new Error(AI_UNAVAILABLE_MESSAGE);
 }
 
 function normalizeAnswerCheckResult(result) {
@@ -2915,7 +2748,7 @@ function normalizeAnswerCheckResult(result) {
 
   return {
     correct: false,
-    message: String(result || "답을 확인하지 못했어요. 다시 시도해 주세요.")
+    message: String(result || AI_UNAVAILABLE_MESSAGE)
   };
 }
 
@@ -2924,8 +2757,9 @@ function normalizeAssessmentResult(result) {
 
   return {
     totalScore: Number(result?.totalScore || scores.reduce((sum, item) => sum + Number(item.score || 0), 0)),
-    maxScore: Number(result?.maxScore || Math.max(10, scores.length * 5)),
+    maxScore: Number(result?.maxScore || Math.max(15, scores.length * 5)),
     scores: scores.map((item) => ({
+      id: String(item.id || ""),
       label: String(item.label || "평가 항목"),
       score: Math.max(0, Math.min(5, Number(item.score || 0))),
       comment: String(item.comment || "")
@@ -3237,12 +3071,14 @@ async function submitReadingQuestion(question) {
 
   try {
     const answer = await requestAgentAnswer(payload);
+    const answerText = String(answer || "").trim();
+    if (!answerText) throw new Error(AI_UNAVAILABLE_MESSAGE);
     adventureProgress.cluesFound += 1;
     updateReadingStatus();
-    appendChatMessage(String(answer || "답변을 받지 못했어요. 다시 질문해 주세요."), "agent");
+    appendChatMessage(answerText, "agent");
     toggleNextQuestionButton(true);
   } catch (error) {
-    appendChatMessage("지금은 AI 답변 연결이 원활하지 않아요. 잠시 후 다시 시도해 주세요.", "agent");
+    appendChatMessage(AI_UNAVAILABLE_MESSAGE, "agent");
     toggleNextQuestionButton(true);
   }
 }
@@ -3291,7 +3127,11 @@ async function submitFinalAnswer(answer) {
       await runConversationAssessment(cleanAnswer);
     }
   } catch (error) {
-    appendChatMessage("지금은 정답 확인 연결이 원활하지 않아요. 잠시 후 다시 시도해 주세요.", "agent");
+    if (adventureProgress.solved) {
+      adventureProgress.solved = false;
+      updateReadingStatus();
+    }
+    appendChatMessage(AI_UNAVAILABLE_MESSAGE, "agent");
     toggleNextQuestionButton(true);
   }
 }
@@ -3428,6 +3268,9 @@ async function saveStudentProfileAndGoToBooks() {
     return false;
   }
 
+  if (typeof window.startBookAdventureParticipation === "function") {
+    window.startBookAdventureParticipation();
+  }
   persistStudentProfile(profile);
   showProfileError("");
   updateReadingStatus();
@@ -3558,8 +3401,8 @@ characterChatForm.addEventListener("submit", (event) => {
   event.preventDefault();
   submitCharacterChatMessage(characterChatInput.value);
 });
-teacherGateBackButton.addEventListener("click", goToActivityMenu);
-teacherDashboardBackButton.addEventListener("click", goToActivityMenu);
+teacherGateBackButton.addEventListener("click", goToStudentProfile);
+teacherDashboardBackButton.addEventListener("click", goToStudentProfile);
 teacherGateForm.addEventListener("submit", (event) => {
   event.preventDefault();
   const code = teacherGateCodeInput.value.trim();

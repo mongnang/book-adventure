@@ -49,7 +49,7 @@ flowchart LR
 - `api/src/shared/store.js`: Cosmos DB 저장 담당입니다.
 - `staticwebapp.config.json`: Azure Static Web Apps 라우팅과 기본 보안 헤더입니다.
 
-Azure 키가 없으면 연습 답변으로 동작하고, 키를 넣으면 실제 Azure OpenAI 답변으로 바뀝니다.
+Azure 키가 없거나 AI 연결에 실패하면 예시 답변을 만들지 않고 재시도 안내를 표시합니다.
 
 ## 4. 초보자 단계별 만들기
 
@@ -173,7 +173,7 @@ npm start
 swa start . --api-location api
 ```
 
-처음에는 Azure 키를 비워도 됩니다. 그 경우 연습 답변으로 동작합니다.
+AI 기능까지 확인하려면 Azure 키를 설정해야 합니다. 키가 없으면 `AI와 연결이 불안정합니다. 다시 시도해보세요.`라고 표시됩니다.
 
 ## 6. 완성본까지의 마일스톤
 
