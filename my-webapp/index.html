@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>한 권으로의 모험</title>
-    <link rel="stylesheet" href="./style.css?v=20260709-title-ai-1">
+    <link rel="stylesheet" href="./style.css?v=20260709-teacher-portal-1">
   </head>
   <body>
     <main class="app-shell">
@@ -117,7 +117,7 @@
           <p class="section-label">활동 선택</p>
           <h2>어떤 독서 모험을 시작할까요?</h2>
           <p class="activity-menu-intro">
-            같은 책으로도 제목 상상하기와 단서 추리하기를 따로 진행할 수 있어요.
+            같은 책으로도 제목 상상하기, 단서 추리하기, 인물 대화하기를 따로 진행할 수 있어요.
           </p>
 
           <div class="activity-card-grid">
@@ -134,6 +134,86 @@
               <p>인물의 마음과 장소 단서를 모아 마지막 정답을 추리합니다.</p>
               <button id="startAdventureActivityButton" type="button">활동 2 시작</button>
             </article>
+
+            <article class="activity-card">
+              <span class="activity-number">활동 3</span>
+              <h3>주요 인물과 직접 대화하기</h3>
+              <p>책 속 인물 한 명을 골라 말투와 성격이 살아 있는 대화를 나눕니다.</p>
+              <button id="startCharacterChatButton" type="button">활동 3 시작</button>
+            </article>
+          </div>
+
+          <button class="teacher-secret-button" id="openTeacherGateButton" type="button">
+            교사용 결과 확인
+          </button>
+        </div>
+      </section>
+
+      <section class="teacher-gate-screen" id="teacherGateScreen" aria-label="교사용 코드 입력 화면">
+        <div class="secret-door-panel" id="teacherGatePanel">
+          <button class="secret-back-button" id="teacherGateBackButton" type="button">활동 선택으로</button>
+          <div class="secret-door-copy">
+            <p class="section-label">비밀 서가</p>
+            <h2>교사용 결과실 문을 열까요?</h2>
+            <p>
+              교사용 코드를 입력하면 다이얼이 맞춰지고, 학생별 활동 기록을 볼 수 있는 방으로 이동합니다.
+            </p>
+          </div>
+
+          <div class="secret-lock" aria-hidden="true">
+            <span class="secret-lock-ring is-outer"></span>
+            <span class="secret-lock-ring is-middle"></span>
+            <span class="secret-lock-ring is-inner"></span>
+            <span class="secret-lock-keyhole"></span>
+          </div>
+
+          <form class="teacher-gate-form" id="teacherGateForm">
+            <label>
+              <span>교사용 코드</span>
+              <input id="teacherGateCodeInput" type="password" autocomplete="current-password" placeholder="비밀 코드 입력" required>
+            </label>
+            <button id="teacherGateSubmitButton" type="submit">문 열기</button>
+          </form>
+          <p class="teacher-gate-status" id="teacherGateStatus" role="status" aria-live="polite">
+            코드를 입력하면 잠긴 문이 반응합니다.
+          </p>
+        </div>
+      </section>
+
+      <section class="teacher-dashboard-screen" id="teacherDashboardScreen" aria-label="교사용 학생별 결과판">
+        <div class="teacher-dashboard-shell">
+          <header class="teacher-dashboard-header">
+            <div>
+              <p class="section-label">교사용 결과실</p>
+              <h2>학생별 결과판</h2>
+              <p>
+                반과 번호를 기준으로 학생을 묶고, 활동을 할 때마다 기록을 차곡차곡 모아 보여줍니다.
+              </p>
+            </div>
+            <div class="teacher-dashboard-actions">
+              <button id="teacherRefreshButton" type="button">다시 불러오기</button>
+              <button id="teacherDashboardBackButton" type="button">활동 선택으로</button>
+            </div>
+          </header>
+
+          <p class="teacher-dashboard-status" id="teacherDashboardStatus" aria-live="polite">
+            학생 기록을 기다리고 있습니다.
+          </p>
+
+          <div class="teacher-summary-strip" id="teacherSummaryStrip" aria-label="결과 요약"></div>
+
+          <div class="teacher-dashboard-grid">
+            <aside class="teacher-student-panel">
+              <div class="teacher-student-panel-header">
+                <h3>학생 목록</h3>
+                <input id="teacherStudentSearchInput" type="search" placeholder="반, 번호, 닉네임 검색">
+              </div>
+              <div class="teacher-student-list" id="teacherStudentList"></div>
+            </aside>
+
+            <section class="teacher-student-detail" id="teacherStudentDetail" aria-live="polite">
+              <p class="teacher-empty-state">왼쪽에서 학생을 선택하면 활동 기록이 시간순으로 보입니다.</p>
+            </section>
           </div>
         </div>
       </section>
@@ -220,6 +300,45 @@
           </section>
         </div>
       </section>
+
+      <section class="character-chat-screen" id="characterChatScreen" aria-label="주요 인물 대화 화면">
+        <div class="character-chat-backdrop" aria-hidden="true"></div>
+        <button class="back-to-activities" id="characterChatBackButton" type="button">활동 선택으로</button>
+
+        <div class="character-chat-panel">
+          <header class="character-chat-header">
+            <div>
+              <p class="section-label">활동 3</p>
+              <h2>누구와 대화해 볼까요?</h2>
+              <p id="characterChatIntro">주요 인물 한 명을 고르면 그 인물의 말투와 규칙에 맞춰 대화가 시작됩니다.</p>
+            </div>
+            <div class="character-chat-book">
+              <span>오늘의 책</span>
+              <strong id="characterChatBookTitle">메밀꽃 필 무렵</strong>
+            </div>
+          </header>
+
+          <div class="character-chat-grid">
+            <aside class="character-chat-selector">
+              <h3>대화할 인물</h3>
+              <div class="character-chat-profile-grid" id="characterChatProfileGrid"></div>
+            </aside>
+
+            <section class="character-chat-room">
+              <div class="character-chat-persona" id="characterChatPersona">
+                <p class="teacher-empty-state">왼쪽에서 인물을 고르면 대화가 시작됩니다.</p>
+              </div>
+              <div class="character-chat-log" id="characterChatLog" aria-live="polite"></div>
+              <form class="character-chat-form" id="characterChatForm">
+                <input id="characterChatInput" type="text" autocomplete="off" maxlength="360" placeholder="인물에게 묻고 싶은 말을 써 보세요.">
+                <button id="characterChatSubmitButton" type="submit">말 걸기</button>
+              </form>
+              <p class="profile-error is-hidden" id="characterChatError" role="alert"></p>
+            </section>
+          </div>
+        </div>
+      </section>
+
       <section class="result-screen" id="resultScreen" aria-label="독서 모험 결과 화면">
         <div class="result-backdrop" aria-hidden="true"></div>
         <button class="result-back-button" id="resultBackToBooks" type="button">책장으로</button>
@@ -227,7 +346,7 @@
       </section>
     </main>
 
-    <script src="./agent-client.js?v=20260709-title-ai-1"></script>
-    <script src="./app.js?v=20260709-title-ai-1"></script>
+    <script src="./agent-client.js?v=20260710-character-chat-1"></script>
+    <script src="./app.js?v=20260710-character-chat-1"></script>
   </body>
 </html>

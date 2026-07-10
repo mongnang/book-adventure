@@ -1,0 +1,89 @@
+[
+  {
+    "id": "sample-title-scenario-001",
+    "sessionId": "sample-session-001",
+    "type": "titleScenarioSubmission",
+    "activityId": "title-scenario",
+    "createdAt": "2026-07-09T09:12:00.000Z",
+    "student": {
+      "className": "3",
+      "number": "12",
+      "nickname": "달빛탐정"
+    },
+    "bookId": "memil",
+    "bookTitle": "메밀꽃 필 무렵",
+    "scenarioText": "메밀꽃이 하얗게 핀 밤, 달빛탐정은 오래된 장터에서 이상한 편지를 발견한다. 편지에는 잃어버린 기억을 찾아 달빛 길을 따라오라는 말이 적혀 있다. 처음에는 장난이라고 생각하지만, 길 위에서 만난 낯선 아이가 같은 편지를 들고 있다. 두 사람은 메밀꽃밭 사이를 걸으며 편지 속 단서를 하나씩 찾는다. 마지막에는 편지가 누군가의 오래된 약속을 지키기 위한 초대였다는 사실을 알게 된다.",
+    "promptKo": "[한국어 설명]\n- 분위기: 따뜻하고 신비로운\n- 그림 내용: 달빛 아래 메밀꽃밭에서 두 아이가 오래된 편지를 들고 길을 바라보는 장면\n- 색감: 달빛 금색, 부드러운 흰색, 짙은 밤색\n- 표지에 넣을 제목 글자: \"메밀꽃 필 무렵\"",
+    "promptEn": "A warm and mysterious children's book cover, two children holding an old letter in a moonlit buckwheat field, soft white flowers, golden moonlight, deep night colors, title text \"메밀꽃 필 무렵\"."
+  },
+  {
+    "id": "sample-question-turn-001",
+    "sessionId": "sample-session-002",
+    "type": "questionTurn",
+    "createdAt": "2026-07-09T09:20:00.000Z",
+    "student": {
+      "className": "3",
+      "number": "8",
+      "nickname": "책숲"
+    },
+    "bookId": "memil",
+    "bookTitle": "메밀꽃 필 무렵",
+    "question": "허 생원의 마음: 허 생원의 주된 마음, 생각은 무엇일까?",
+    "answer": "허 생원은 겉으로는 무뚝뚝해 보여도 마음속에는 오래된 그리움이 남아 있어요. 특히 밤길과 메밀꽃밭 장면은 그 기억이 다시 떠오르게 만드는 단서가 됩니다. 허 생원이 자꾸 지난 일을 말하게 되는 까닭은 무엇일까요?",
+    "mode": "azure-openai"
+  },
+  {
+    "id": "sample-assessment-001",
+    "sessionId": "sample-session-002",
+    "type": "conversationAssessment",
+    "createdAt": "2026-07-09T09:30:00.000Z",
+    "student": {
+      "className": "3",
+      "number": "8",
+      "nickname": "책숲"
+    },
+    "bookId": "memil",
+    "bookTitle": "메밀꽃 필 무렵",
+    "answer": "동이는 허 생원의 아들일 가능성이 크다. 동이의 행동과 허 생원의 옛이야기가 연결되기 때문이다.",
+    "assessment": {
+      "totalScore": 9,
+      "maxScore": 10,
+      "scores": [
+        {
+          "id": "inquiry",
+          "label": "질문 태도",
+          "score": 4,
+          "comment": "인물의 마음과 장소 단서를 나누어 질문하며 추리의 재료를 모았어요."
+        },
+        {
+          "id": "conclusion",
+          "label": "추리 결론",
+          "score": 5,
+          "comment": "최종 답안이 핵심 단서와 잘 이어졌고 이유도 함께 적었어요."
+        }
+      ],
+      "summary": "질문으로 단서를 모으고 마지막 결론까지 잘 연결한 활동이었어요.",
+      "nextStep": "다음에는 허 생원의 옛이야기와 동이의 행동이 만나는 장면을 한 문장으로 더 붙여 보세요."
+    },
+    "mode": "azure-openai"
+  },
+  {
+    "id": "sample-character-chat-001",
+    "sessionId": "sample-session-003",
+    "type": "characterChatTurn",
+    "activityId": "character-chat",
+    "createdAt": "2026-07-09T09:36:00.000Z",
+    "student": {
+      "className": "3",
+      "number": "12",
+      "nickname": "달빛탐정"
+    },
+    "bookId": "memil",
+    "bookTitle": "메밀꽃 필 무렵",
+    "characterName": "동이",
+    "characterRole": "젊고 조심스러운 인물",
+    "studentMessage": "허 생원을 왜 도와주고 싶었나요?",
+    "characterReply": "그분을 보고 그냥 지나치기가 어려웠어요. 겉으로는 무뚝뚝해 보여도 길 위에서 오래 지친 마음이 느껴졌거든요. 너라면 그런 사람을 만났을 때 어떤 말을 먼저 건네고 싶나요?",
+    "mode": "azure-openai"
+  }
+]

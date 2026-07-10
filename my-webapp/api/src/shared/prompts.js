@@ -47,7 +47,7 @@ function formatConversation(conversation = []) {
   }
 
   const lines = conversation.slice(-8).map((entry) => {
-    const role = entry.role === "user" ? "학생" : "AI";
+    const role = entry.role === "user" ? "학생" : entry.role === "character" ? "인물" : "AI";
     return `- ${role}: ${String(entry.text || "").slice(0, 180)}`;
   });
   return ["이전 대화 요약:", ...lines].join("\n");
@@ -200,9 +200,56 @@ function buildTitleScenarioMessages(payload) {
   ];
 }
 
+function buildCharacterChatMessages(payload) {
+  const adventureBook = getAdventureBook(payload.book);
+  const character = payload.character || {};
+  const rules = payload.characterRules || {};
+  const boundaries = Array.isArray(rules.boundaries) ? rules.boundaries : [];
+
+  return [
+    {
+      role: "system",
+      content: [
+        "너는 초등학생 독서 활동 3에서 책 속 주요 인물로 대화하는 AI다.",
+        "역할은 해설자가 아니라 학생이 고른 인물이다. 1인칭으로 답한다.",
+        "학생은 책 밖에서 질문하는 독자이며, 학생을 작품 속 인물로 끌어들이지 않는다.",
+        "반드시 선택된 인물의 말투와 제약을 따른다.",
+        "책에 없는 사건, 감정, 결말을 사실처럼 꾸며 말하지 않는다.",
+        "작품의 핵심 비밀이나 결말은 학생이 먼저 충분히 묻기 전까지 직접 단정하지 않는다.",
+        "한 번에 2~4문장, 450자 이내로 답한다.",
+        "마지막 문장은 학생이 다시 물어볼 만한 짧은 질문 1개로 끝낸다.",
+        "",
+        `책: ${adventureBook.title}`,
+        `작가: ${adventureBook.author}`,
+        `주요 인물: ${adventureBook.characters.join(", ") || "선택한 책의 주요 인물"}`,
+        `선택된 인물: ${character.name || "이름 없음"} (${character.role || "역할 미상"})`,
+        `인물 말투: ${rules.speechStyle || "인물의 역할에 맞는 자연스러운 말투"}`,
+        `인물 관점: ${rules.perspective || "자신이 직접 겪거나 느낄 수 있는 범위"}`,
+        boundaries.length ? `인물 제약: ${boundaries.join(" / ")}` : "인물 제약: 결말을 먼저 말하지 않고 책 밖 해설자가 되지 않는다.",
+        `원전 근거 메모: ${adventureBook.sourceNote}`,
+        `단서 방향: ${adventureBook.clueHints.join(" / ")}`
+      ].join("\n")
+    },
+    {
+      role: "user",
+      content: [
+        formatStudentLine(payload.student),
+        formatConversation(payload.conversation),
+        "",
+        `학생이 인물에게 건넨 말: ${payload.message}`,
+        "",
+        "선택된 인물의 목소리로만 답해 줘.",
+        "답변 안에서 '나는 AI야', '작품 해설을 하자면' 같은 말은 쓰지 마.",
+        "학생의 질문을 받아 주고, 인물의 말투로 장면과 마음을 짧게 보여 줘."
+      ].join("\n")
+    }
+  ];
+}
+
 module.exports = {
   buildAssessmentMessages,
   buildAnswerCheckMessages,
+  buildCharacterChatMessages,
   buildTitleScenarioMessages,
   buildTurnMessages
 };

@@ -174,6 +174,19 @@
     };
   }
 
+  function buildPracticeCharacterReply(payload = {}) {
+    const characterName = payload.character?.name || "인물";
+    const rules = payload.characterRules || {};
+    const message = String(payload.message || "").trim();
+
+    return [
+      `${characterName}: ${String(rules.speechStyle || "내 말투에 맞게").split(".")[0].trim()} 대답해 볼게요.`,
+      `네가 물은 “${message || "그 질문"}”은 내 마음을 다시 돌아보게 하네요.`,
+      "내가 직접 본 장면과 느낀 마음 안에서만 말하자면, 말보다 행동에 더 많은 뜻이 숨어 있었어요.",
+      "너는 그 장면에서 어떤 행동이 가장 눈에 남았나요?"
+    ].join("\n");
+  }
+
   window.recordAdventureSessionStart = async function recordAdventureSessionStart(payload) {
     try {
       await postJson("/api/adventure/session", payload);
@@ -232,6 +245,19 @@
     } catch (error) {
       console.warn("[BookAdventure] Title scenario AI API unavailable.", error);
       throw error;
+    }
+  };
+
+  window.talkToBookCharacter = async function talkToBookCharacter(payload) {
+    try {
+      const data = await postJson("/api/adventure/character-chat", payload);
+      return data || { reply: buildPracticeCharacterReply(payload), mode: "practice" };
+    } catch (error) {
+      console.warn("[BookAdventure] Character chat API unavailable. Using practice reply.", error);
+      return {
+        reply: buildPracticeCharacterReply(payload),
+        mode: "practice"
+      };
     }
   };
 
