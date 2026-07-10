@@ -935,8 +935,7 @@ function getTeacherStudentLabel(student) {
   const normalized = normalizeTeacherStudent(student);
   const className = normalized.className ? `${normalized.className}반` : "";
   const number = normalized.number ? `${normalized.number}번` : "";
-  const nickname = normalized.nickname || "닉네임 없음";
-  return [className, number, nickname].filter(Boolean).join(" ");
+  return [className, number].filter(Boolean).join(" ");
 }
 
 function getTeacherCreatedAt(record) {
@@ -971,11 +970,6 @@ function getTeacherActivityTabCounts(student) {
 }
 
 function getPreferredTeacherActivityTab(student) {
-  const counts = getTeacherActivityTabCounts(student);
-  if (counts.activity1 > 0) return "activity1";
-  if (counts.activity2 > 0) return "activity2";
-  if (counts.activity3 > 0) return "activity3";
-  if (counts.session > 0) return "session";
   return "all";
 }
 
@@ -993,6 +987,7 @@ function normalizeTeacherRecord(record) {
     activityId: record.activityId || "",
     createdAt: getTeacherCreatedAt(record),
     sessionId: record.sessionId || "",
+    nickname: String(record.nickname || record.studentNickname || record.student?.nickname || "").trim(),
     bookId: record.bookId || "",
     bookTitle: record.bookTitle || "",
     characterName: record.characterName || record.character?.name || "",
@@ -1023,12 +1018,16 @@ function buildTeacherParticipations(records) {
         sessionId: record.sessionId || "",
         startedAt: record.createdAt || "",
         latestAt: record.createdAt || "",
+        nickname: record.nickname || "",
+        nicknames: [],
         records: []
       });
     }
 
     const group = groups.get(key);
     group.records.push(record);
+    if (record.nickname && !group.nicknames.includes(record.nickname)) group.nicknames.push(record.nickname);
+    if (record.nickname) group.nickname = record.nickname;
     if (!group.startedAt || String(record.createdAt).localeCompare(String(group.startedAt)) < 0) {
       group.startedAt = record.createdAt;
     }
@@ -1222,7 +1221,7 @@ function renderTeacherStudentList() {
     const title = document.createElement("strong");
     title.textContent = `${student.className || "-"}반 ${student.number || "-"}번`;
     const nickname = document.createElement("span");
-    nickname.textContent = student.nickname || "닉네임 없음";
+    nickname.textContent = student.nickname ? `최근 활동 닉네임: ${student.nickname}` : "활동 닉네임 기록 없음";
     const meta = document.createElement("small");
     meta.textContent = `참여 ${student.participationCount}회 · 활동 1 ${student.activity1Count}개 · 활동 2 ${student.activity2Count}개 · 활동 3 ${student.activity3Count}개 · 최근 ${teacherShortDate(student.latestAt)}`;
     button.append(title, nickname, meta);
@@ -1323,8 +1322,12 @@ function teacherCsvEscape(value) {
   return `"${String(value ?? "").replace(/"/g, '""').replace(/\r?\n/g, " ").trim()}"`;
 }
 
+function getTeacherRecordParticipation(student, record) {
+  return student.participations.find((participation) => participation.records.includes(record)) || null;
+}
+
 function getTeacherRecordParticipationNumber(student, record) {
-  return student.participations.find((participation) => participation.records.includes(record))?.participationNumber || "";
+  return getTeacherRecordParticipation(student, record)?.participationNumber || "";
 }
 
 function buildTeacherCsv(student, records) {
@@ -1335,7 +1338,7 @@ function buildTeacherCsv(student, records) {
     record.typeLabel,
     student.className,
     student.number,
-    student.nickname,
+    record.nickname || getTeacherRecordParticipation(student, record)?.nickname || student.nickname,
     record.bookTitle || record.bookId,
     record.characterName,
     record.question || record.studentMessage,
@@ -1360,7 +1363,264 @@ function downloadTeacherStudentCsv(student) {
   document.body.appendChild(link);
   link.click();
   link.remove();
-  URL.revokeObjectURL(url);
+  window.setTimeout(() => URL.revokeObjectURL(url), 1200);
+}
+
+function getTeacherAssessmentPoints(student, activityTab = "all") {
+  return student.participations.map((participation) => {
+    const assessments = participation.records.filter((record) => {
+      if (record.type !== "conversationAssessment") return false;
+      return activityTab === "all" || getTeacherRecordActivity(record) === activityTab;
+    });
+    const record = assessments[assessments.length - 1];
+    if (!record) return null;
+
+    const totalScore = Number(record.totalScore ?? record.assessment?.totalScore);
+    const maxScore = Number(record.maxScore ?? record.assessment?.maxScore ?? 15);
+    if (!Number.isFinite(totalScore) || !Number.isFinite(maxScore) || maxScore <= 0) return null;
+
+    return {
+      participationNumber: participation.participationNumber,
+      totalScore,
+      maxScore,
+      chartScore: Math.max(0, Math.min(15, (totalScore / maxScore) * 15)),
+      createdAt: record.createdAt,
+      nickname: participation.nickname || record.nickname || "",
+      record
+    };
+  }).filter(Boolean);
+}
+
+function buildTeacherScoreGeometry(points) {
+  const width = 720;
+  const height = 260;
+  const padding = { top: 32, right: 28, bottom: 54, left: 52 };
+  const plotWidth = width - padding.left - padding.right;
+  const plotHeight = height - padding.top - padding.bottom;
+  const coordinates = points.map((point, index) => ({
+    ...point,
+    x: points.length === 1 ? padding.left + plotWidth / 2 : padding.left + (plotWidth * index) / (points.length - 1),
+    y: padding.top + plotHeight * (1 - point.chartScore / 15)
+  }));
+  return {
+    width,
+    height,
+    padding,
+    plotWidth,
+    plotHeight,
+    coordinates,
+    path: coordinates.map((point, index) => `${index ? "L" : "M"} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`).join(" ")
+  };
+}
+
+function createTeacherSvgElement(tagName, attributes = {}) {
+  const element = document.createElementNS("http://www.w3.org/2000/svg", tagName);
+  Object.entries(attributes).forEach(([name, value]) => element.setAttribute(name, String(value)));
+  return element;
+}
+
+function renderTeacherScoreTrend(student) {
+  const section = document.createElement("section");
+  section.className = "teacher-score-trend";
+  const heading = document.createElement("div");
+  heading.className = "teacher-score-trend-heading";
+  const title = document.createElement("h4");
+  title.textContent = "참여별 점수 변화";
+  const description = document.createElement("p");
+  description.textContent = "평가 총점을 15점 기준으로 맞춰 참여 순서대로 이어 봅니다.";
+  heading.append(title, description);
+  section.appendChild(heading);
+
+  const points = getTeacherAssessmentPoints(student, teacherState.selectedActivityTab || "all");
+  if (!points.length) {
+    const empty = document.createElement("p");
+    empty.className = "teacher-score-trend-empty";
+    empty.textContent = teacherState.selectedActivityTab === "activity1" || teacherState.selectedActivityTab === "activity3" || teacherState.selectedActivityTab === "session"
+      ? "이 활동에는 아직 점수 평가가 없습니다. 전체 또는 활동 2 탭에서 점수 변화를 확인하세요."
+      : "평가 점수가 쌓이면 참여 회차별 변화가 여기에 선으로 표시됩니다.";
+    section.appendChild(empty);
+    return section;
+  }
+
+  const geometry = buildTeacherScoreGeometry(points);
+  const svg = createTeacherSvgElement("svg", {
+    class: "teacher-score-trend-chart",
+    viewBox: `0 0 ${geometry.width} ${geometry.height}`,
+    role: "img",
+    "aria-label": points.map((point) => `${point.participationNumber}번째 참여 ${point.totalScore}점`).join(", ")
+  });
+
+  [0, 5, 10, 15].forEach((tick) => {
+    const y = geometry.padding.top + geometry.plotHeight * (1 - tick / 15);
+    svg.appendChild(createTeacherSvgElement("line", {
+      class: "teacher-score-grid-line",
+      x1: geometry.padding.left,
+      x2: geometry.width - geometry.padding.right,
+      y1: y,
+      y2: y
+    }));
+    const label = createTeacherSvgElement("text", {
+      class: "teacher-score-axis-label",
+      x: geometry.padding.left - 12,
+      y: y + 4,
+      "text-anchor": "end"
+    });
+    label.textContent = String(tick);
+    svg.appendChild(label);
+  });
+
+  if (geometry.coordinates.length > 1) {
+    svg.appendChild(createTeacherSvgElement("path", {
+      class: "teacher-score-trend-line",
+      d: geometry.path
+    }));
+  }
+
+  geometry.coordinates.forEach((point) => {
+    const circle = createTeacherSvgElement("circle", {
+      class: "teacher-score-trend-point",
+      cx: point.x,
+      cy: point.y,
+      r: 7
+    });
+    const tooltip = createTeacherSvgElement("title");
+    tooltip.textContent = `${point.participationNumber}번째 참여: ${point.totalScore}/${point.maxScore}점${point.nickname ? `, 닉네임 ${point.nickname}` : ""}`;
+    circle.appendChild(tooltip);
+    svg.appendChild(circle);
+
+    const value = createTeacherSvgElement("text", {
+      class: "teacher-score-point-value",
+      x: point.x,
+      y: Math.max(18, point.y - 14),
+      "text-anchor": "middle"
+    });
+    value.textContent = `${point.totalScore}/${point.maxScore}`;
+    svg.appendChild(value);
+
+    const participation = createTeacherSvgElement("text", {
+      class: "teacher-score-point-label",
+      x: point.x,
+      y: geometry.height - 22,
+      "text-anchor": "middle"
+    });
+    participation.textContent = `${point.participationNumber}번째`;
+    svg.appendChild(participation);
+  });
+
+  const chartWrap = document.createElement("div");
+  chartWrap.className = "teacher-score-trend-chart-wrap";
+  chartWrap.appendChild(svg);
+  section.appendChild(chartWrap);
+
+  if (points.length === 1) {
+    const note = document.createElement("p");
+    note.className = "teacher-score-trend-note";
+    note.textContent = "다음 참여의 평가가 저장되면 점들이 선으로 이어집니다.";
+    section.appendChild(note);
+  }
+  return section;
+}
+
+function teacherHtmlEscape(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function teacherReportField(title, value) {
+  const clean = teacherPlainText(value);
+  if (!clean) return "";
+  return `<section class="field"><strong>${teacherHtmlEscape(title)}</strong><p>${teacherHtmlEscape(clean)}</p></section>`;
+}
+
+function teacherReportRecordHtml(record) {
+  let body = "";
+  if (record.type === "conversationAssessment") {
+    const scores = Array.isArray(record.assessment?.scores) ? record.assessment.scores : [];
+    body += `<div class="score-total">총점 ${teacherHtmlEscape(record.totalScore ?? "-")} / ${teacherHtmlEscape(record.maxScore ?? 15)}</div>`;
+    body += `<div class="score-grid">${scores.map((score) => `<article><span>${teacherHtmlEscape(score.label || "평가")}</span><strong>${teacherHtmlEscape(score.score ?? 0)}/5</strong><p>${teacherHtmlEscape(score.comment || "")}</p></article>`).join("")}</div>`;
+    body += teacherReportField("종합 피드백", record.assessment?.summary);
+    body += teacherReportField("다음 목표", record.assessment?.nextStep);
+    body += teacherReportField("최종 답안", record.answer);
+  } else if (record.type === "characterChatTurn") {
+    body += teacherReportField("대화 인물", record.characterName);
+    body += teacherReportField("학생의 말", record.studentMessage);
+    body += teacherReportField("인물의 답변", record.characterReply || record.answer);
+  } else {
+    if (record.type === "answerCheck") {
+      body += `<p class="answer-result">${record.correct ? "정답으로 확인됨" : "아직 더 생각해 볼 답안"}</p>`;
+    }
+    body += teacherReportField("질문", record.question);
+    body += teacherReportField("응답", record.answer || record.message);
+    body += teacherReportField("시나리오", record.scenarioText);
+    body += teacherReportField("표지 프롬프트", record.promptKo || record.promptEn);
+  }
+
+  return `<article class="record">
+    <header><strong>${teacherHtmlEscape(record.typeLabel)}</strong><time>${teacherHtmlEscape(teacherShortDate(record.createdAt))}</time></header>
+    ${record.bookTitle || record.bookId ? `<p class="book">책: ${teacherHtmlEscape(record.bookTitle || record.bookId)}</p>` : ""}
+    ${body || "<p class=\"muted\">세부 내용이 없는 기록입니다.</p>"}
+  </article>`;
+}
+
+function teacherReportChartHtml(points) {
+  if (!points.length) return `<p class="chart-empty">아직 저장된 평가 점수가 없습니다.</p>`;
+  const geometry = buildTeacherScoreGeometry(points);
+  const grid = [0, 5, 10, 15].map((tick) => {
+    const y = geometry.padding.top + geometry.plotHeight * (1 - tick / 15);
+    return `<line x1="${geometry.padding.left}" x2="${geometry.width - geometry.padding.right}" y1="${y}" y2="${y}"></line><text x="${geometry.padding.left - 12}" y="${y + 4}" text-anchor="end">${tick}</text>`;
+  }).join("");
+  const line = geometry.coordinates.length > 1 ? `<path d="${geometry.path}"></path>` : "";
+  const pointsHtml = geometry.coordinates.map((point) => `<g><circle cx="${point.x}" cy="${point.y}" r="7"><title>${teacherHtmlEscape(`${point.participationNumber}번째 참여 ${point.totalScore}/${point.maxScore}점`)}</title></circle><text class="value" x="${point.x}" y="${Math.max(18, point.y - 14)}" text-anchor="middle">${teacherHtmlEscape(`${point.totalScore}/${point.maxScore}`)}</text><text class="label" x="${point.x}" y="${geometry.height - 22}" text-anchor="middle">${teacherHtmlEscape(`${point.participationNumber}번째`)}</text></g>`).join("");
+  return `<svg class="chart" viewBox="0 0 ${geometry.width} ${geometry.height}" role="img" aria-label="참여별 점수 변화">${grid}${line}${pointsHtml}</svg>`;
+}
+
+function buildTeacherStudentReportHtml(student) {
+  const points = getTeacherAssessmentPoints(student, "all");
+  const participationHtml = student.participations.slice().reverse().map((participation) => {
+    const nickname = participation.nickname || "기록 없음";
+    return `<details open class="participation">
+      <summary><strong>${teacherHtmlEscape(participation.participationNumber)}번째 참여</strong><span>${teacherHtmlEscape(teacherShortDate(participation.startedAt))}</span><small>활동 닉네임: ${teacherHtmlEscape(nickname)}</small></summary>
+      <div class="records">${participation.records.slice().reverse().map(teacherReportRecordHtml).join("")}</div>
+    </details>`;
+  }).join("");
+  const identity = `${student.className || "-"}반 ${student.number || "-"}번`;
+  const generatedAt = new Date().toLocaleString("ko-KR");
+
+  return `<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${teacherHtmlEscape(identity)} 독서 모험 보고서</title>
+  <style>
+    :root{color-scheme:dark;--bg:#160d08;--panel:#24150d;--paper:#fffaf0;--ink:#2b1a10;--gold:#c99b52;--line:#dbc49e}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#f8ead2;font-family:"Noto Sans KR","Malgun Gothic",sans-serif;line-height:1.6}.page{width:min(1040px,calc(100% - 32px));margin:28px auto 60px}.report-header{display:flex;justify-content:space-between;gap:24px;align-items:flex-start;padding:24px;border:1px solid rgba(219,196,158,.35);border-radius:8px;background:var(--panel)}h1{margin:4px 0;font-size:34px}.eyebrow,.muted{color:#cdbda5}.print-button{border:1px solid var(--line);border-radius:8px;padding:11px 14px;background:#d1a75f;color:#1e120b;font-weight:800;cursor:pointer;white-space:nowrap}.summary{margin:18px 0;padding:18px;border-radius:8px;background:var(--paper);color:var(--ink)}.summary h2{margin:0 0 4px}.chart{display:block;width:100%;height:auto;margin-top:12px}.chart line{stroke:#dfd1b9;stroke-width:1}.chart path{fill:none;stroke:#956323;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}.chart circle{fill:#fff8e9;stroke:#956323;stroke-width:4}.chart text{fill:#745c3d;font-size:12px}.chart .value{fill:#4b2e14;font-size:13px;font-weight:800}.chart .label{font-weight:700}.chart-empty{padding:24px;border:1px dashed #c8b18b;border-radius:8px;text-align:center}.participation{margin-top:14px;border:1px solid rgba(219,196,158,.35);border-radius:8px;background:var(--panel);overflow:hidden}.participation summary{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;padding:16px;cursor:pointer}.participation summary span{color:#d4c6b1}.participation summary small{text-align:right;color:#e7c88f}.records{display:grid;gap:12px;padding:0 14px 14px}.record{padding:16px;border-radius:8px;background:var(--paper);color:var(--ink)}.record header{display:flex;justify-content:space-between;gap:16px;border-bottom:1px solid #e4d7c1;padding-bottom:8px}.record time,.book{color:#76634d}.field{margin-top:12px;padding-top:10px;border-top:1px solid #eee2ce}.field p{margin:4px 0 0;white-space:pre-wrap}.score-total,.answer-result{display:inline-block;margin-top:12px;padding:7px 10px;border-radius:8px;background:#ead4aa;font-weight:800}.score-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}.score-grid article{padding:10px;border:1px solid #e0cfb2;border-radius:8px}.score-grid span,.score-grid strong{display:block}.score-grid p{margin:6px 0 0;font-size:13px}.book{margin:10px 0 0}@media(max-width:700px){.report-header{display:grid}.participation summary,.score-grid{grid-template-columns:1fr}.participation summary small{text-align:left}}@media print{:root{color-scheme:light}body{background:#fff;color:#111}.page{width:100%;margin:0}.print-button{display:none}.report-header,.participation{border-color:#bbb;background:#fff;color:#111}.participation{break-inside:avoid}.record{border:1px solid #ccc}.summary{border:1px solid #bbb}}
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="report-header"><div><p class="eyebrow">독서 모험 학생 보고서</p><h1>${teacherHtmlEscape(identity)}</h1><p>참여 ${student.participationCount}회, 누적 기록 ${student.recordCount}개, 평가 ${student.assessmentCount}개</p><small class="muted">생성 시각: ${teacherHtmlEscape(generatedAt)}</small></div><button class="print-button" onclick="window.print()">인쇄 또는 PDF 저장</button></header>
+    <section class="summary"><h2>참여별 점수 변화</h2><p>평가 총점을 15점 기준으로 맞춰 참여 순서대로 표시합니다.</p>${teacherReportChartHtml(points)}</section>
+    <section aria-label="참여 회차별 기록">${participationHtml || `<p class="chart-empty">저장된 참여 기록이 없습니다.</p>`}</section>
+  </main>
+</body>
+</html>`;
+}
+
+function downloadTeacherStudentHtmlReport(student) {
+  const html = buildTeacherStudentReportHtml(student);
+  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `book-adventure-${student.className || "class"}-${student.number || "number"}-report-${new Date().toISOString().slice(0, 10)}.html`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1200);
 }
 
 function renderTeacherActivityTabs(student) {
@@ -1419,7 +1679,8 @@ function renderTeacherParticipations(student, records) {
     date.textContent = teacherShortDate(participation.startedAt);
     const meta = document.createElement("small");
     const books = Array.from(new Set(participation.records.map((record) => record.bookTitle).filter(Boolean)));
-    meta.textContent = `${participation.records.length}개 기록${books.length ? ` · ${books.join(", ")}` : ""}`;
+    const nickname = participation.nickname || "닉네임 기록 없음";
+    meta.textContent = `활동 닉네임: ${nickname} · ${participation.records.length}개 기록${books.length ? ` · ${books.join(", ")}` : ""}`;
     summary.append(title, date, meta);
 
     const recordList = document.createElement("div");
@@ -1456,27 +1717,33 @@ function renderTeacherStudentDetail() {
   kicker.className = "teacher-detail-kicker";
   kicker.textContent = "학생 결과";
   const title = document.createElement("h3");
-  title.textContent = `${student.className || "-"}반 ${student.number || "-"}번 ${student.nickname || ""}`;
+  title.textContent = `${student.className || "-"}반 ${student.number || "-"}번`;
   const meta = document.createElement("p");
   meta.textContent = `참여 ${student.participationCount}회 · 누적 기록 ${student.recordCount}개 · 활동 1 ${student.activity1Count}개 · 활동 2 ${student.activity2Count}개 · 활동 3 ${student.activity3Count}개 · 평가 ${student.assessmentCount}개`;
   headerText.append(kicker, title, meta);
   header.appendChild(headerText);
 
+  const headerActions = document.createElement("div");
+  headerActions.className = "teacher-detail-actions";
   const csvButton = document.createElement("button");
   csvButton.type = "button";
   csvButton.textContent = "현재 탭 CSV";
   csvButton.addEventListener("click", () => downloadTeacherStudentCsv(student));
-  header.appendChild(csvButton);
+  const reportButton = document.createElement("button");
+  reportButton.type = "button";
+  reportButton.textContent = "학생 HTML 보고서";
+  reportButton.addEventListener("click", () => downloadTeacherStudentHtmlReport(student));
+  headerActions.append(csvButton, reportButton);
+  header.appendChild(headerActions);
   teacherStudentDetail.appendChild(header);
 
-  if (student.nicknames?.length > 1) {
-    const nicknameNote = document.createElement("p");
-    nicknameNote.className = "teacher-nickname-note";
-    nicknameNote.textContent = `사용한 닉네임: ${student.nicknames.join(", ")}`;
-    teacherStudentDetail.appendChild(nicknameNote);
-  }
+  const nicknameNote = document.createElement("p");
+  nicknameNote.className = "teacher-nickname-note";
+  nicknameNote.textContent = "학생 결과는 반과 번호로 묶습니다. 닉네임은 각 참여 회차 안에서 확인할 수 있습니다.";
+  teacherStudentDetail.appendChild(nicknameNote);
 
   teacherStudentDetail.appendChild(renderTeacherActivityTabs(student));
+  teacherStudentDetail.appendChild(renderTeacherScoreTrend(student));
 
   const filteredRecords = getTeacherRecordsForTab(student, teacherState.selectedActivityTab);
   const timelineNote = document.createElement("p");
