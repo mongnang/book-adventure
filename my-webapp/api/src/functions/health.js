@@ -3,7 +3,7 @@ const { json } = require("../shared/http");
 const { getOpenAIDiagnostics, isOpenAIConfigured } = require("../shared/openai");
 const { hasCosmosConfig } = require("../shared/store");
 
-const BUILD_VERSION = "2026-07-09-cosmos-health-1";
+const BUILD_VERSION = "2026-07-10-character-chat-1";
 
 function getCosmosDiagnostics() {
   let endpointHost = "";
@@ -34,6 +34,9 @@ app.http("health", {
     azureOpenAIConfigured: isOpenAIConfigured(),
     openAI: getOpenAIDiagnostics(),
     cosmos: getCosmosDiagnostics(),
+    teacherReview: {
+      configured: Boolean(process.env.TEACHER_ACCESS_CODE)
+    },
     time: new Date().toISOString()
   })
 });

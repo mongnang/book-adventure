@@ -10,6 +10,7 @@
     "COSMOS_ENDPOINT": "https://YOUR-COSMOS.documents.azure.com:443/",
     "COSMOS_KEY": "YOUR-COSMOS-KEY",
     "COSMOS_DATABASE_NAME": "bookAdventure",
-    "COSMOS_CONTAINER_NAME": "adventureEvents"
+    "COSMOS_CONTAINER_NAME": "adventureEvents",
+    "TEACHER_ACCESS_CODE": "CHANGE-THIS-TEACHER-CODE"
   }
 }

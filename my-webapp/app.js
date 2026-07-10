@@ -264,8 +264,11 @@ const heroScreen = document.querySelector("#heroScreen");
 const profileScreen = document.querySelector("#profileScreen");
 const bookScreen = document.querySelector("#bookScreen");
 const activityMenuScreen = document.querySelector("#activityMenuScreen");
+const teacherGateScreen = document.querySelector("#teacherGateScreen");
+const teacherDashboardScreen = document.querySelector("#teacherDashboardScreen");
 const scenarioScreen = document.querySelector("#scenarioScreen");
 const adventureScreen = document.querySelector("#adventureScreen");
+const characterChatScreen = document.querySelector("#characterChatScreen");
 const resultScreen = document.querySelector("#resultScreen");
 const resultPanel = document.querySelector("#resultPanel");
 const resultBackToBooks = document.querySelector("#resultBackToBooks");
@@ -289,6 +292,21 @@ const coverAuthor = document.querySelector("#coverAuthor");
 const startButton = document.querySelector("#startButton");
 const startScenarioButton = document.querySelector("#startScenarioButton");
 const startAdventureActivityButton = document.querySelector("#startAdventureActivityButton");
+const startCharacterChatButton = document.querySelector("#startCharacterChatButton");
+const openTeacherGateButton = document.querySelector("#openTeacherGateButton");
+const teacherGatePanel = document.querySelector("#teacherGatePanel");
+const teacherGateBackButton = document.querySelector("#teacherGateBackButton");
+const teacherGateForm = document.querySelector("#teacherGateForm");
+const teacherGateCodeInput = document.querySelector("#teacherGateCodeInput");
+const teacherGateSubmitButton = document.querySelector("#teacherGateSubmitButton");
+const teacherGateStatus = document.querySelector("#teacherGateStatus");
+const teacherRefreshButton = document.querySelector("#teacherRefreshButton");
+const teacherDashboardBackButton = document.querySelector("#teacherDashboardBackButton");
+const teacherDashboardStatus = document.querySelector("#teacherDashboardStatus");
+const teacherSummaryStrip = document.querySelector("#teacherSummaryStrip");
+const teacherStudentSearchInput = document.querySelector("#teacherStudentSearchInput");
+const teacherStudentList = document.querySelector("#teacherStudentList");
+const teacherStudentDetail = document.querySelector("#teacherStudentDetail");
 const scenarioBookTitle = document.querySelector("#scenarioBookTitle");
 const scenarioChatLog = document.querySelector("#scenarioChatLog");
 const scenarioChoicePanel = document.querySelector("#scenarioChoicePanel");
@@ -318,6 +336,16 @@ const dialogueBox = document.querySelector(".dialogue-box");
 const speakerName = document.querySelector("#speakerName");
 const dialogueText = document.querySelector("#dialogueText");
 const nextQuestionButton = document.querySelector("#nextQuestionButton");
+const characterChatBackButton = document.querySelector("#characterChatBackButton");
+const characterChatBookTitle = document.querySelector("#characterChatBookTitle");
+const characterChatIntro = document.querySelector("#characterChatIntro");
+const characterChatProfileGrid = document.querySelector("#characterChatProfileGrid");
+const characterChatPersona = document.querySelector("#characterChatPersona");
+const characterChatLog = document.querySelector("#characterChatLog");
+const characterChatForm = document.querySelector("#characterChatForm");
+const characterChatInput = document.querySelector("#characterChatInput");
+const characterChatSubmitButton = document.querySelector("#characterChatSubmitButton");
+const characterChatError = document.querySelector("#characterChatError");
 
 const questionCategories = [
   {
@@ -445,6 +473,51 @@ const standingImageByBook = {
   ]
 };
 
+const characterChatRulesByBook = {
+  memil: {
+    "허 생원": {
+      speechStyle: "무뚝뚝하지만 속정이 깊다. 말끝을 길게 늘이기보다 짧고 담담하게 말한다.",
+      perspective: "오래 장터를 떠돈 장돌뱅이로서 길, 장터, 밤길, 오래된 기억을 자주 떠올린다.",
+      boundaries: [
+        "동이와의 관계를 처음부터 직접 단정하지 않는다.",
+        "마음속 그리움은 드러내되 과하게 감상적으로 말하지 않는다.",
+        "학생에게 원전의 결말을 바로 말하지 않고 장면을 떠올리게 한다."
+      ],
+      starter: "흠, 나한테 묻고 싶은 게 있나. 길 위에서 본 것들은 생각보다 오래 남는 법이지."
+    },
+    "조 선달": {
+      speechStyle: "능청스럽고 현실적이다. 허 생원을 놀리듯 말하지만 분위기를 부드럽게 만든다.",
+      perspective: "동행자의 눈으로 허 생원과 동이를 관찰한다. 장터 사람들의 말투와 길 위의 분위기를 잘 안다.",
+      boundaries: [
+        "모든 비밀을 아는 사람처럼 굴지 않는다.",
+        "농담은 짧게 하고 학생의 질문을 흐리지 않는다.",
+        "중요한 단서는 관찰한 행동 중심으로만 말한다."
+      ],
+      starter: "허허, 나한테 묻겠다고? 길동무 눈에는 제법 보이는 게 많지."
+    },
+    "동이": {
+      speechStyle: "젊고 조심스럽지만 마음이 따뜻하다. 예의를 지키며 솔직하게 말한다.",
+      perspective: "자신의 행동, 어머니 이야기, 허 생원을 돕는 마음을 중심으로 말한다.",
+      boundaries: [
+        "자신의 출생 비밀을 확정적으로 먼저 말하지 않는다.",
+        "허 생원을 함부로 평가하지 않는다.",
+        "학생이 묻는 장면 안에서 느낀 마음을 중심으로 답한다."
+      ],
+      starter: "저에게 물어보실 게 있나요? 제가 본 것과 느낀 것이라면 조심히 말해 볼게요."
+    },
+    "성 서방네 처녀": {
+      speechStyle: "회상 속 인물처럼 차분하고 부드럽다. 직접적인 설명보다 기억의 분위기로 말한다.",
+      perspective: "허 생원의 오래된 기억, 달밤, 메밀꽃밭의 분위기와 연결된다.",
+      boundaries: [
+        "현재 시점의 사건을 모두 알고 있는 것처럼 말하지 않는다.",
+        "작품의 숨은 인연을 직접 결론으로 말하지 않는다.",
+        "기억과 분위기를 통해 학생이 추리하도록 돕는다."
+      ],
+      starter: "오래된 이야기는 달빛처럼 조용히 남아 있지요. 무엇이 궁금한가요?"
+    }
+  }
+};
+
 const finalAnswerRulesByBook = {
   memil: {
     question: "허 생원과 동이 사이에는 어떤 숨은 인연이 있을까?",
@@ -472,6 +545,7 @@ let activeScreenId = "heroScreen";
 let resultOriginScreenId = "adventureScreen";
 let viewportRaf = null;
 let titleScenarioActivity = null;
+let characterChatActivity = null;
 let adventureProgress = {
   chancesLeft: 10,
   cluesFound: 0,
@@ -499,15 +573,43 @@ const titleScenarioRevisionChoices = [
   }
 ];
 
-const screenOrder = ["heroScreen", "profileScreen", "bookScreen", "activityMenuScreen", "scenarioScreen", "adventureScreen", "resultScreen"];
+const screenOrder = ["heroScreen", "profileScreen", "bookScreen", "activityMenuScreen", "scenarioScreen", "adventureScreen", "characterChatScreen", "resultScreen"];
 const screenLabels = {
   heroScreen: "입장",
   profileScreen: "학생 정보",
   bookScreen: "책장",
   activityMenuScreen: "활동 선택",
+  teacherGateScreen: "교사용 문",
+  teacherDashboardScreen: "결과실",
   scenarioScreen: "활동 1",
   adventureScreen: "모험",
+  characterChatScreen: "활동 3",
   resultScreen: "결과"
+};
+
+const teacherRecordTypeLabels = {
+  sessionStart: "입장 기록",
+  titleScenarioTurn: "활동 1 대화",
+  titleScenarioSubmission: "활동 1 제출",
+  questionTurn: "활동 2 질문",
+  answerCheck: "활동 2 정답 확인",
+  conversationAssessment: "활동 2 평가",
+  characterChatTurn: "활동 3 인물 대화"
+};
+
+const teacherActivityTabLabels = {
+  all: "전체",
+  activity1: "활동 1",
+  activity2: "활동 2",
+  activity3: "활동 3",
+  session: "입장 기록"
+};
+
+const teacherState = {
+  accessCode: "",
+  students: [],
+  selectedStudentKey: "",
+  selectedActivityTab: ""
 };
 
 function readJsonStorage(key, fallback) {
@@ -664,7 +766,7 @@ function syncViewportMetrics() {
 }
 
 function getScreenElements() {
-  return [heroScreen, profileScreen, bookScreen, activityMenuScreen, scenarioScreen, adventureScreen, resultScreen];
+  return [heroScreen, profileScreen, bookScreen, activityMenuScreen, teacherGateScreen, teacherDashboardScreen, scenarioScreen, adventureScreen, characterChatScreen, resultScreen];
 }
 
 function hasResultScreenContent() {
@@ -744,6 +846,14 @@ function goToActivityMenu() {
   setActiveScreen("activityMenuScreen");
 }
 
+function goToTeacherGate() {
+  setTeacherGateStatus("코드를 입력하면 잠긴 문이 반응합니다.");
+  teacherGatePanel.classList.remove("is-unlocking", "is-denied");
+  teacherGateCodeInput.value = "";
+  setActiveScreen("teacherGateScreen");
+  window.setTimeout(() => teacherGateCodeInput.focus(), 250);
+}
+
 function goToScenario() {
   scenarioBookTitle.textContent = selectedBook.title;
   startTitleScenarioActivity();
@@ -753,6 +863,11 @@ function goToScenario() {
 
 function goToAdventure() {
   setActiveScreen("adventureScreen");
+}
+
+function goToCharacterChat() {
+  startCharacterChatActivity();
+  setActiveScreen("characterChatScreen");
 }
 
 function goToResult() {
@@ -789,6 +904,568 @@ function createTextElement(tagName, className, text) {
   if (className) element.className = className;
   element.textContent = text;
   return element;
+}
+
+function setTeacherGateStatus(message, isError = false) {
+  teacherGateStatus.textContent = message;
+  teacherGateStatus.classList.toggle("is-error", isError);
+}
+
+function setTeacherDashboardStatus(message, isError = false) {
+  teacherDashboardStatus.textContent = message;
+  teacherDashboardStatus.classList.toggle("is-error", isError);
+}
+
+function normalizeTeacherStudent(student) {
+  return {
+    className: String(student?.className || "").trim(),
+    number: String(student?.number || "").trim(),
+    nickname: String(student?.nickname || "").trim()
+  };
+}
+
+function getTeacherStudentKey(student, sessionId = "") {
+  const normalized = normalizeTeacherStudent(student);
+  const className = normalized.className.toLowerCase();
+  const number = normalized.number.toLowerCase();
+  return className && number ? `class:${className}|number:${number}` : `session:${sessionId || "anonymous"}`;
+}
+
+function getTeacherStudentLabel(student) {
+  const normalized = normalizeTeacherStudent(student);
+  const className = normalized.className ? `${normalized.className}반` : "";
+  const number = normalized.number ? `${normalized.number}번` : "";
+  const nickname = normalized.nickname || "닉네임 없음";
+  return [className, number, nickname].filter(Boolean).join(" ");
+}
+
+function getTeacherCreatedAt(record) {
+  return record.createdAt || record.clientTimestamp || "";
+}
+
+function compareTeacherCreatedAt(a, b) {
+  return String(getTeacherCreatedAt(a)).localeCompare(String(getTeacherCreatedAt(b)));
+}
+
+function getTeacherRecordActivity(record) {
+  if (record.type === "titleScenarioTurn" || record.type === "titleScenarioSubmission") return "activity1";
+  if (record.type === "questionTurn" || record.type === "answerCheck" || record.type === "conversationAssessment") return "activity2";
+  if (record.type === "characterChatTurn") return "activity3";
+  if (record.type === "sessionStart") return "session";
+  return "other";
+}
+
+function getTeacherActivityTabCounts(student) {
+  return student.records.reduce((counts, record) => {
+    counts.all += 1;
+    const activity = getTeacherRecordActivity(record);
+    if (counts[activity] !== undefined) counts[activity] += 1;
+    return counts;
+  }, {
+    all: 0,
+    activity1: 0,
+    activity2: 0,
+    activity3: 0,
+    session: 0
+  });
+}
+
+function getPreferredTeacherActivityTab(student) {
+  const counts = getTeacherActivityTabCounts(student);
+  if (counts.activity1 > 0) return "activity1";
+  if (counts.activity2 > 0) return "activity2";
+  if (counts.activity3 > 0) return "activity3";
+  if (counts.session > 0) return "session";
+  return "all";
+}
+
+function getTeacherRecordsForTab(student, tab) {
+  if (tab === "all") return student.records;
+  return student.records.filter((record) => getTeacherRecordActivity(record) === tab);
+}
+
+function normalizeTeacherRecord(record) {
+  const assessment = record.assessment || {};
+  return {
+    id: record.id || `${record.type || "record"}-${Math.random().toString(16).slice(2)}`,
+    type: record.type || "adventureEvent",
+    typeLabel: record.typeLabel || teacherRecordTypeLabels[record.type] || record.type || "기록",
+    activityId: record.activityId || "",
+    createdAt: getTeacherCreatedAt(record),
+    sessionId: record.sessionId || "",
+    bookId: record.bookId || "",
+    bookTitle: record.bookTitle || "",
+    characterName: record.characterName || record.character?.name || "",
+    studentMessage: record.studentMessage || record.message || record.question || "",
+    characterReply: record.characterReply || record.answer || "",
+    question: record.question || "",
+    answer: record.answer || "",
+    correct: typeof record.correct === "boolean" ? record.correct : null,
+    message: record.message || "",
+    scenarioText: record.scenarioText || "",
+    promptKo: record.promptKo || record.nanoBananaPrompt?.ko || "",
+    promptEn: record.promptEn || record.nanoBananaPrompt?.en || "",
+    totalScore: assessment.totalScore ?? record.totalScore ?? null,
+    maxScore: assessment.maxScore ?? record.maxScore ?? null,
+    assessment,
+    progress: record.progress || null,
+    mode: record.mode || ""
+  };
+}
+
+function normalizeTeacherStudentGroup(group) {
+  const records = Array.isArray(group.records) ? group.records.map(normalizeTeacherRecord).sort(compareTeacherCreatedAt) : [];
+  const nicknames = new Set(Array.isArray(group.nicknames) ? group.nicknames : []);
+  if (group.nickname) nicknames.add(group.nickname);
+
+  const normalized = {
+    studentKey: group.studentKey || getTeacherStudentKey(group, records[0]?.sessionId),
+    className: String(group.className || "").trim(),
+    number: String(group.number || "").trim(),
+    nickname: String(group.nickname || "").trim(),
+    nicknames: Array.from(nicknames).filter(Boolean),
+    latestAt: group.latestAt || records[records.length - 1]?.createdAt || "",
+    records
+  };
+
+  normalized.label = getTeacherStudentLabel(normalized);
+  normalized.activity1Count = records.filter((record) => getTeacherRecordActivity(record) === "activity1").length;
+  normalized.activity2Count = records.filter((record) => getTeacherRecordActivity(record) === "activity2").length;
+  normalized.activity3Count = records.filter((record) => getTeacherRecordActivity(record) === "activity3").length;
+  normalized.assessmentCount = records.filter((record) => record.type === "conversationAssessment").length;
+  normalized.recordCount = records.length;
+  return normalized;
+}
+
+function buildTeacherStudentsFromRecords(records) {
+  const groups = new Map();
+
+  records.forEach((record) => {
+    const student = normalizeTeacherStudent(record.student);
+    const key = record.studentKey || getTeacherStudentKey(student, record.sessionId);
+    if (!groups.has(key)) {
+      groups.set(key, {
+        studentKey: key,
+        className: student.className,
+        number: student.number,
+        nickname: student.nickname,
+        nicknames: [],
+        latestAt: "",
+        records: []
+      });
+    }
+
+    const group = groups.get(key);
+    if (student.nickname && !group.nicknames.includes(student.nickname)) group.nicknames.push(student.nickname);
+    if (!group.className && student.className) group.className = student.className;
+    if (!group.number && student.number) group.number = student.number;
+    if (student.nickname) group.nickname = student.nickname;
+
+    const normalizedRecord = normalizeTeacherRecord(record);
+    group.records.push(normalizedRecord);
+    if (!group.latestAt || String(normalizedRecord.createdAt).localeCompare(String(group.latestAt)) > 0) {
+      group.latestAt = normalizedRecord.createdAt;
+    }
+  });
+
+  return Array.from(groups.values()).map(normalizeTeacherStudentGroup);
+}
+
+function prepareTeacherStudents(input) {
+  const items = Array.isArray(input) ? input : [];
+  const students = items.some((item) => Array.isArray(item.records))
+    ? items.map(normalizeTeacherStudentGroup)
+    : buildTeacherStudentsFromRecords(items);
+
+  return students.sort((a, b) => {
+    const classCompare = String(a.className).localeCompare(String(b.className), "ko", { numeric: true });
+    if (classCompare) return classCompare;
+    const numberCompare = String(a.number).localeCompare(String(b.number), "ko", { numeric: true });
+    if (numberCompare) return numberCompare;
+    return String(b.latestAt).localeCompare(String(a.latestAt));
+  });
+}
+
+function teacherShortDate(value) {
+  if (!value) return "날짜 없음";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleString("ko-KR", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
+function teacherPlainText(value) {
+  return String(value || "").trim();
+}
+
+function createTeacherTextBlock(title, value) {
+  const clean = teacherPlainText(value);
+  if (!clean) return null;
+
+  const block = document.createElement("section");
+  block.className = "teacher-detail-block";
+  const heading = document.createElement("strong");
+  heading.textContent = title;
+  const body = document.createElement("p");
+  body.textContent = clean;
+  block.append(heading, body);
+  return block;
+}
+
+function getVisibleTeacherStudents() {
+  const query = teacherStudentSearchInput.value.trim().toLowerCase();
+  if (!query) return teacherState.students;
+
+  return teacherState.students.filter((student) => [
+    student.className,
+    student.number,
+    student.nickname,
+    student.label,
+    ...(student.nicknames || [])
+  ].filter(Boolean).join(" ").toLowerCase().includes(query));
+}
+
+function renderTeacherSummary() {
+  const recordCount = teacherState.students.reduce((sum, student) => sum + student.recordCount, 0);
+  const activity1Count = teacherState.students.reduce((sum, student) => sum + student.activity1Count, 0);
+  const activity2Count = teacherState.students.reduce((sum, student) => sum + student.activity2Count, 0);
+  const activity3Count = teacherState.students.reduce((sum, student) => sum + student.activity3Count, 0);
+  const assessmentCount = teacherState.students.reduce((sum, student) => sum + student.assessmentCount, 0);
+  const summaryItems = [
+    ["학생", teacherState.students.length],
+    ["전체 기록", recordCount],
+    ["활동 1 기록", activity1Count],
+    ["활동 2 기록", activity2Count],
+    ["활동 3 기록", activity3Count],
+    ["평가 완료", assessmentCount]
+  ];
+
+  teacherSummaryStrip.innerHTML = "";
+  summaryItems.forEach(([label, value]) => {
+    const item = document.createElement("article");
+    item.className = "teacher-summary-item";
+    const labelElement = document.createElement("span");
+    labelElement.textContent = label;
+    const valueElement = document.createElement("strong");
+    valueElement.textContent = String(value);
+    item.append(labelElement, valueElement);
+    teacherSummaryStrip.appendChild(item);
+  });
+}
+
+function renderTeacherStudentList() {
+  const visibleStudents = getVisibleTeacherStudents();
+  teacherStudentList.innerHTML = "";
+
+  if (!visibleStudents.length) {
+    const empty = document.createElement("p");
+    empty.className = "teacher-empty-state";
+    empty.textContent = teacherState.students.length ? "검색에 맞는 학생이 없습니다." : "아직 불러온 학생 기록이 없습니다.";
+    teacherStudentList.appendChild(empty);
+    return;
+  }
+
+  if (!teacherState.selectedStudentKey || !visibleStudents.some((student) => student.studentKey === teacherState.selectedStudentKey)) {
+    teacherState.selectedStudentKey = visibleStudents[0].studentKey;
+    teacherState.selectedActivityTab = getPreferredTeacherActivityTab(visibleStudents[0]);
+  }
+
+  visibleStudents.forEach((student) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "teacher-student-button";
+    button.classList.toggle("is-selected", student.studentKey === teacherState.selectedStudentKey);
+    button.dataset.studentKey = student.studentKey;
+
+    const title = document.createElement("strong");
+    title.textContent = `${student.className || "-"}반 ${student.number || "-"}번`;
+    const nickname = document.createElement("span");
+    nickname.textContent = student.nickname || "닉네임 없음";
+    const meta = document.createElement("small");
+    meta.textContent = `활동 1 ${student.activity1Count}개 · 활동 2 ${student.activity2Count}개 · 활동 3 ${student.activity3Count}개 · 최근 ${teacherShortDate(student.latestAt)}`;
+    button.append(title, nickname, meta);
+    teacherStudentList.appendChild(button);
+  });
+}
+
+function renderTeacherScoreRows(assessment) {
+  const rows = Array.isArray(assessment?.scores) ? assessment.scores : [];
+  if (!rows.length) return null;
+
+  const box = document.createElement("div");
+  box.className = "teacher-score-list";
+  rows.forEach((score) => {
+    const row = document.createElement("div");
+    row.className = "teacher-score-row";
+    const value = Math.max(0, Math.min(5, Number(score.score || 0)));
+    const label = document.createElement("span");
+    label.textContent = score.label || "평가";
+    const meter = document.createElement("meter");
+    meter.min = 0;
+    meter.max = 5;
+    meter.value = value;
+    const scoreText = document.createElement("strong");
+    scoreText.textContent = `${value}/5`;
+    const comment = document.createElement("p");
+    comment.textContent = score.comment || "";
+    row.append(label, meter, scoreText, comment);
+    box.appendChild(row);
+  });
+  return box;
+}
+
+function renderTeacherRecord(record) {
+  const card = document.createElement("article");
+  card.className = `teacher-timeline-card is-${record.type}`;
+
+  const header = document.createElement("header");
+  header.className = "teacher-timeline-header";
+  const type = document.createElement("span");
+  type.textContent = record.typeLabel;
+  const time = document.createElement("time");
+  time.textContent = teacherShortDate(record.createdAt);
+  header.append(type, time);
+  card.appendChild(header);
+
+  if (record.bookTitle || record.bookId) {
+    const book = document.createElement("p");
+    book.className = "teacher-book-line";
+    book.textContent = `책: ${record.bookTitle || record.bookId}`;
+    card.appendChild(book);
+  }
+
+  if (record.type === "conversationAssessment") {
+    const score = document.createElement("div");
+    score.className = "teacher-score-badge";
+    score.textContent = `총점 ${record.totalScore ?? "-"} / ${record.maxScore ?? 10}`;
+    card.appendChild(score);
+
+    const scoreRows = renderTeacherScoreRows(record.assessment);
+    if (scoreRows) card.appendChild(scoreRows);
+
+    [
+      createTeacherTextBlock("종합 피드백", record.assessment?.summary),
+      createTeacherTextBlock("다음 목표", record.assessment?.nextStep),
+      createTeacherTextBlock("최종 답안", record.answer)
+    ].filter(Boolean).forEach((block) => card.appendChild(block));
+    return card;
+  }
+
+  if (record.type === "characterChatTurn") {
+    [
+      createTeacherTextBlock("대화 인물", record.characterName),
+      createTeacherTextBlock("학생의 말", record.studentMessage),
+      createTeacherTextBlock("인물의 답변", record.characterReply || record.answer)
+    ].filter(Boolean).forEach((block) => card.appendChild(block));
+    return card;
+  }
+
+  if (record.type === "answerCheck") {
+    const result = document.createElement("p");
+    result.className = record.correct ? "teacher-answer-result is-correct" : "teacher-answer-result";
+    result.textContent = record.correct ? "정답으로 확인됨" : "아직 더 생각해 볼 답안";
+    card.appendChild(result);
+  }
+
+  [
+    createTeacherTextBlock("질문", record.question),
+    createTeacherTextBlock("응답", record.answer || record.message),
+    createTeacherTextBlock("시나리오", record.scenarioText),
+    createTeacherTextBlock("표지 프롬프트", record.promptKo || record.promptEn)
+  ].filter(Boolean).forEach((block) => card.appendChild(block));
+
+  return card;
+}
+
+function teacherCsvEscape(value) {
+  return `"${String(value ?? "").replace(/"/g, '""').replace(/\r?\n/g, " ").trim()}"`;
+}
+
+function buildTeacherCsv(student, records) {
+  const header = ["createdAt", "type", "class", "number", "nickname", "book", "character", "question", "answer", "score", "summary", "nextStep", "scenarioText", "prompt"];
+  const rows = records.map((record) => [
+    record.createdAt,
+    record.typeLabel,
+    student.className,
+    student.number,
+    student.nickname,
+    record.bookTitle || record.bookId,
+    record.characterName,
+    record.question || record.studentMessage,
+    record.answer || record.characterReply || record.message,
+    record.totalScore == null ? "" : `${record.totalScore}/${record.maxScore || 10}`,
+    record.assessment?.summary,
+    record.assessment?.nextStep,
+    record.scenarioText,
+    record.promptKo || record.promptEn
+  ].map(teacherCsvEscape).join(","));
+  return [header.join(","), ...rows].join("\n");
+}
+
+function downloadTeacherStudentCsv(student) {
+  const records = getTeacherRecordsForTab(student, teacherState.selectedActivityTab || "all");
+  const csv = `\uFEFF${buildTeacherCsv(student, records)}`;
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `book-adventure-${student.className || "class"}-${student.number || "number"}-${teacherState.selectedActivityTab || "all"}-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function renderTeacherActivityTabs(student) {
+  const counts = getTeacherActivityTabCounts(student);
+  const tabs = ["all", "activity1", "activity2", "activity3", "session"];
+  const container = document.createElement("div");
+  container.className = "teacher-activity-tabs";
+
+  tabs.forEach((tabId) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "teacher-activity-tab-button";
+    button.classList.toggle("is-selected", teacherState.selectedActivityTab === tabId);
+    button.disabled = tabId !== "all" && counts[tabId] === 0;
+    button.dataset.activityTab = tabId;
+    const label = document.createElement("span");
+    label.textContent = teacherActivityTabLabels[tabId];
+    const count = document.createElement("strong");
+    count.textContent = String(counts[tabId]);
+    button.append(label, count);
+    button.addEventListener("click", () => {
+      teacherState.selectedActivityTab = tabId;
+      renderTeacherStudentDetail();
+    });
+    container.appendChild(button);
+  });
+
+  return container;
+}
+
+function renderTeacherStudentDetail() {
+  const student = teacherState.students.find((item) => item.studentKey === teacherState.selectedStudentKey);
+  teacherStudentDetail.innerHTML = "";
+
+  if (!student) {
+    const empty = document.createElement("p");
+    empty.className = "teacher-empty-state";
+    empty.textContent = "왼쪽에서 학생을 선택하면 활동 기록이 시간순으로 보입니다.";
+    teacherStudentDetail.appendChild(empty);
+    return;
+  }
+
+  const counts = getTeacherActivityTabCounts(student);
+  if (!teacherState.selectedActivityTab || (teacherState.selectedActivityTab !== "all" && counts[teacherState.selectedActivityTab] === 0)) {
+    teacherState.selectedActivityTab = getPreferredTeacherActivityTab(student);
+  }
+
+  const header = document.createElement("header");
+  header.className = "teacher-detail-header";
+  const headerText = document.createElement("div");
+  const kicker = document.createElement("p");
+  kicker.className = "teacher-detail-kicker";
+  kicker.textContent = "학생 결과";
+  const title = document.createElement("h3");
+  title.textContent = `${student.className || "-"}반 ${student.number || "-"}번 ${student.nickname || ""}`;
+  const meta = document.createElement("p");
+  meta.textContent = `누적 기록 ${student.recordCount}개 · 활동 1 ${student.activity1Count}개 · 활동 2 ${student.activity2Count}개 · 활동 3 ${student.activity3Count}개 · 평가 ${student.assessmentCount}개`;
+  headerText.append(kicker, title, meta);
+  header.appendChild(headerText);
+
+  const csvButton = document.createElement("button");
+  csvButton.type = "button";
+  csvButton.textContent = "현재 탭 CSV";
+  csvButton.addEventListener("click", () => downloadTeacherStudentCsv(student));
+  header.appendChild(csvButton);
+  teacherStudentDetail.appendChild(header);
+
+  if (student.nicknames?.length > 1) {
+    const nicknameNote = document.createElement("p");
+    nicknameNote.className = "teacher-nickname-note";
+    nicknameNote.textContent = `사용한 닉네임: ${student.nicknames.join(", ")}`;
+    teacherStudentDetail.appendChild(nicknameNote);
+  }
+
+  teacherStudentDetail.appendChild(renderTeacherActivityTabs(student));
+
+  const filteredRecords = getTeacherRecordsForTab(student, teacherState.selectedActivityTab);
+  const timelineNote = document.createElement("p");
+  timelineNote.className = "teacher-timeline-note";
+  timelineNote.textContent = teacherState.selectedActivityTab === "all"
+    ? "전체 기록은 시간순으로 보입니다. 활동별로 보려면 탭을 선택하세요."
+    : `${teacherActivityTabLabels[teacherState.selectedActivityTab]} 기록만 보고 있습니다.`;
+  teacherStudentDetail.appendChild(timelineNote);
+
+  const timeline = document.createElement("div");
+  timeline.className = "teacher-timeline";
+  if (!filteredRecords.length) {
+    const empty = document.createElement("p");
+    empty.className = "teacher-empty-state";
+    empty.textContent = "이 탭에는 아직 기록이 없습니다.";
+    timeline.appendChild(empty);
+  } else {
+    filteredRecords.forEach((record) => timeline.appendChild(renderTeacherRecord(record)));
+  }
+  teacherStudentDetail.appendChild(timeline);
+}
+
+function renderTeacherDashboard() {
+  renderTeacherSummary();
+  renderTeacherStudentList();
+  renderTeacherStudentDetail();
+}
+
+function setTeacherStudents(input, message) {
+  teacherState.students = prepareTeacherStudents(input);
+  teacherState.selectedStudentKey = teacherState.students[0]?.studentKey || "";
+  teacherState.selectedActivityTab = teacherState.students[0] ? getPreferredTeacherActivityTab(teacherState.students[0]) : "";
+  renderTeacherDashboard();
+  setTeacherDashboardStatus(message);
+}
+
+async function loadTeacherResultsFromCode(code, { animateDoor = false } = {}) {
+  teacherGateSubmitButton.disabled = true;
+  teacherRefreshButton.disabled = true;
+  setTeacherGateStatus("다이얼이 천천히 맞물리는 중입니다.");
+  setTeacherDashboardStatus("학생 기록을 불러오는 중입니다.");
+
+  try {
+    const response = await fetch("/api/adventure/teacher-results?limit=800", {
+      headers: {
+        "x-teacher-access-code": code
+      }
+    });
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok || !data.ok) {
+      throw new Error(data.message || "교사용 코드가 맞지 않거나 결과실을 열 수 없습니다.");
+    }
+
+    teacherState.accessCode = code;
+    setTeacherStudents(data.students || [], `${data.studentCount || 0}명의 학생 기록을 불러왔습니다.`);
+
+    if (animateDoor) {
+      teacherGatePanel.classList.remove("is-denied");
+      teacherGatePanel.classList.add("is-unlocking");
+      setTeacherGateStatus("문이 열리고 있습니다.");
+      window.setTimeout(() => setActiveScreen("teacherDashboardScreen"), 900);
+    }
+  } catch (error) {
+    teacherGatePanel.classList.remove("is-unlocking");
+    teacherGatePanel.classList.add("is-denied");
+    window.setTimeout(() => teacherGatePanel.classList.remove("is-denied"), 520);
+    setTeacherGateStatus(error.message || "문이 열리지 않았어요. 코드를 다시 확인해 주세요.", true);
+    setTeacherDashboardStatus("학생 기록을 불러오지 못했습니다.", true);
+  } finally {
+    teacherGateSubmitButton.disabled = false;
+    teacherRefreshButton.disabled = false;
+  }
 }
 
 function getTitleScenarioQuestion(stage) {
@@ -1406,6 +2083,264 @@ function getCharacterProfiles(book) {
   }));
 }
 
+function getCharacterChatRules(book, character) {
+  const bookRules = characterChatRulesByBook[book.id] || {};
+  const exactRules = bookRules[character.name] || {};
+
+  return {
+    speechStyle: exactRules.speechStyle || `${character.name}의 역할에 맞게 자연스럽고 짧게 말한다. 초등학생이 이해하기 쉬운 한국어를 쓴다.`,
+    perspective: exactRules.perspective || `「${book.title}」 속 ${character.role || "주요 인물"}의 입장에서, 자신이 직접 겪거나 느꼈을 법한 범위 안에서 말한다.`,
+    boundaries: exactRules.boundaries || [
+      "작품 전체 결말이나 정답을 먼저 단정하지 않는다.",
+      "책에 없는 사건을 새로 만들어 사실처럼 말하지 않는다.",
+      "학생이 더 생각할 수 있도록 마지막에는 짧은 질문을 하나 남긴다."
+    ],
+    starter: exactRules.starter || `${character.name}입니다. 나에게 궁금한 장면이나 마음을 물어봐 주세요.`
+  };
+}
+
+function createCharacterChatState(book = selectedBook) {
+  return {
+    bookId: book.id,
+    bookTitle: book.title,
+    selectedCharacter: null,
+    messages: [],
+    busy: false
+  };
+}
+
+function showCharacterChatError(message) {
+  characterChatError.textContent = message;
+  characterChatError.classList.toggle("is-hidden", !message);
+}
+
+function appendCharacterChatMessage(role, text, character = characterChatActivity?.selectedCharacter) {
+  if (!characterChatActivity) return;
+  const entry = {
+    role,
+    text: String(text || ""),
+    characterName: role === "character" ? character?.name || "" : "",
+    createdAt: new Date().toISOString()
+  };
+  characterChatActivity.messages.push(entry);
+  characterChatActivity.messages = characterChatActivity.messages.slice(-40);
+  renderCharacterChatLog();
+}
+
+function getCharacterChatSnapshot(limit = 12) {
+  return (characterChatActivity?.messages || []).slice(-limit).map((message) => ({
+    role: message.role === "student" ? "user" : "character",
+    text: message.text,
+    characterName: message.characterName || characterChatActivity?.selectedCharacter?.name || "",
+    createdAt: message.createdAt
+  }));
+}
+
+function renderCharacterChatProfiles() {
+  characterChatProfileGrid.innerHTML = "";
+  getCharacterProfiles(selectedBook).forEach((character, index) => {
+    const button = document.createElement("button");
+    button.className = "profile-button character-chat-profile";
+    button.type = "button";
+    button.dataset.characterChatIndex = String(index);
+    button.classList.toggle("is-selected", characterChatActivity?.selectedCharacter?.id === character.id);
+
+    const avatar = document.createElement("span");
+    avatar.className = "profile-image";
+
+    const image = document.createElement("img");
+    image.src = character.profileImage;
+    image.alt = `${character.name} 프로필`;
+    image.loading = "lazy";
+    image.addEventListener("load", () => avatar.classList.add("has-image"));
+    image.addEventListener("error", () => avatar.classList.remove("has-image"));
+
+    const placeholder = document.createElement("span");
+    placeholder.className = "profile-placeholder";
+    placeholder.setAttribute("aria-hidden", "true");
+
+    const name = document.createElement("span");
+    name.className = "profile-name";
+    name.textContent = character.name;
+
+    const role = document.createElement("span");
+    role.className = "profile-role";
+    role.textContent = character.role;
+
+    avatar.append(image, placeholder);
+    button.append(avatar, name, role);
+    characterChatProfileGrid.appendChild(button);
+  });
+}
+
+function renderCharacterChatPersona() {
+  characterChatPersona.innerHTML = "";
+  const character = characterChatActivity?.selectedCharacter;
+
+  if (!character) {
+    const empty = document.createElement("p");
+    empty.className = "teacher-empty-state";
+    empty.textContent = "왼쪽에서 인물을 고르면 대화가 시작됩니다.";
+    characterChatPersona.appendChild(empty);
+    return;
+  }
+
+  const rules = getCharacterChatRules(selectedBook, character);
+  const title = document.createElement("div");
+  title.className = "character-chat-persona-title";
+  title.append(
+    createTextElement("strong", "", character.name),
+    createTextElement("span", "", character.role)
+  );
+
+  const style = createTextElement("p", "", rules.speechStyle);
+  const perspective = createTextElement("p", "", rules.perspective);
+  const ruleList = document.createElement("ul");
+  rules.boundaries.slice(0, 3).forEach((rule) => {
+    const item = document.createElement("li");
+    item.textContent = rule;
+    ruleList.appendChild(item);
+  });
+
+  characterChatPersona.append(title, style, perspective, ruleList);
+}
+
+function renderCharacterChatLog() {
+  characterChatLog.innerHTML = "";
+  const messages = characterChatActivity?.messages || [];
+
+  if (!messages.length) {
+    const empty = document.createElement("p");
+    empty.className = "character-chat-empty";
+    empty.textContent = "아직 대화가 없습니다. 인물을 고르고 첫 질문을 건네 보세요.";
+    characterChatLog.appendChild(empty);
+    return;
+  }
+
+  messages.forEach((message) => {
+    const item = document.createElement("div");
+    item.className = `character-chat-message is-${message.role}`;
+    const label = document.createElement("strong");
+    label.textContent = message.role === "student" ? "나" : message.characterName || characterChatActivity?.selectedCharacter?.name || "인물";
+    const body = document.createElement("p");
+    body.textContent = message.text;
+    item.append(label, body);
+    characterChatLog.appendChild(item);
+  });
+
+  characterChatLog.scrollTop = characterChatLog.scrollHeight;
+}
+
+function renderCharacterChatActivity() {
+  if (!characterChatActivity) return;
+  characterChatBookTitle.textContent = selectedBook.title;
+  characterChatIntro.textContent = `「${selectedBook.title}」의 주요 인물 중 한 명을 골라 직접 대화해 보세요.`;
+  renderCharacterChatProfiles();
+  renderCharacterChatPersona();
+  renderCharacterChatLog();
+  characterChatInput.disabled = !characterChatActivity.selectedCharacter || characterChatActivity.busy;
+  characterChatSubmitButton.disabled = !characterChatActivity.selectedCharacter || characterChatActivity.busy;
+  characterChatSubmitButton.textContent = characterChatActivity.busy ? "듣는 중" : "말 걸기";
+  characterChatInput.placeholder = characterChatActivity.selectedCharacter
+    ? `${characterChatActivity.selectedCharacter.name}에게 묻고 싶은 말`
+    : "먼저 왼쪽에서 인물을 고르세요.";
+}
+
+function selectCharacterChatCharacter(index) {
+  const character = getCharacterProfiles(selectedBook)[index];
+  if (!characterChatActivity || !character) return;
+
+  characterChatActivity.selectedCharacter = character;
+  characterChatActivity.messages = [];
+  const rules = getCharacterChatRules(selectedBook, character);
+  appendCharacterChatMessage("character", rules.starter, character);
+  showCharacterChatError("");
+  renderCharacterChatActivity();
+  window.setTimeout(() => characterChatInput.focus(), 80);
+}
+
+function buildLocalCharacterReply(message, character, rules) {
+  return [
+    `${character.name}: ${rules.speechStyle.split(".")[0].trim()} 마음으로 대답해 볼게요.`,
+    `네가 물은 “${message}”는 그냥 지나칠 질문이 아니에요.`,
+    "내가 본 장면과 마음을 떠올리면, 말보다 행동 속에 더 많은 뜻이 숨어 있었어요.",
+    "너는 그 장면에서 어떤 행동이 가장 이상하게 느껴졌나요?"
+  ].join("\n");
+}
+
+async function requestCharacterChatReply(payload) {
+  if (typeof window.talkToBookCharacter === "function") {
+    return window.talkToBookCharacter(payload);
+  }
+
+  await new Promise((resolve) => window.setTimeout(resolve, 450));
+  return {
+    reply: buildLocalCharacterReply(payload.message, payload.character, payload.characterRules || {}),
+    mode: "practice"
+  };
+}
+
+async function submitCharacterChatMessage(text) {
+  const message = text.trim();
+  const character = characterChatActivity?.selectedCharacter;
+  if (!message) {
+    showCharacterChatError("인물에게 건넬 말을 써 주세요.");
+    return;
+  }
+
+  if (!character) {
+    showCharacterChatError("먼저 대화할 인물을 골라 주세요.");
+    return;
+  }
+
+  const rules = getCharacterChatRules(selectedBook, character);
+  const previousConversation = getCharacterChatSnapshot(16);
+  appendCharacterChatMessage("student", message, character);
+  characterChatInput.value = "";
+  characterChatActivity.busy = true;
+  renderCharacterChatActivity();
+
+  const payload = {
+    activityId: "character-chat",
+    student: getStudentSnapshot(),
+    book: {
+      id: selectedBook.id,
+      title: selectedBook.title,
+      author: selectedBook.author,
+      description: selectedBook.description
+    },
+    character,
+    characterRules: rules,
+    message,
+    conversation: previousConversation
+  };
+
+  try {
+    const result = await requestCharacterChatReply(payload);
+    const reply = String(result?.reply || result?.answer || "").trim() || buildLocalCharacterReply(message, character, rules);
+    appendCharacterChatMessage("character", reply, character);
+
+    if (result?.mode && result.mode !== "azure-openai" && result.openAIError) {
+      appendCharacterChatMessage("character", "방금은 연결이 조금 불안정해서 짧게만 대답했어요. 다시 물어봐도 좋아요.", character);
+    }
+  } catch (error) {
+    appendCharacterChatMessage("character", buildLocalCharacterReply(message, character, rules), character);
+  } finally {
+    characterChatActivity.busy = false;
+    renderCharacterChatActivity();
+    characterChatInput.focus();
+  }
+}
+
+function startCharacterChatActivity({ restart = false } = {}) {
+  if (!characterChatActivity || characterChatActivity.bookId !== selectedBook.id || restart) {
+    characterChatActivity = createCharacterChatState(selectedBook);
+  }
+
+  showCharacterChatError("");
+  renderCharacterChatActivity();
+}
+
 function getBookLocations(book) {
   return locationsByBook[book.id] || [
     {
@@ -1827,6 +2762,11 @@ function moveToPreviousScreen() {
   }
 
   if (activeScreenId === "adventureScreen") {
+    goToActivityMenu();
+    return;
+  }
+
+  if (activeScreenId === "characterChatScreen") {
     goToActivityMenu();
     return;
   }
@@ -2606,6 +3546,52 @@ nextQuestionButton.addEventListener("click", () => renderCategoryChoices({ updat
 startButton.addEventListener("click", goToActivityMenu);
 startScenarioButton.addEventListener("click", goToScenario);
 startAdventureActivityButton.addEventListener("click", openAdventureScreen);
+startCharacterChatButton.addEventListener("click", goToCharacterChat);
+openTeacherGateButton.addEventListener("click", goToTeacherGate);
+characterChatBackButton.addEventListener("click", goToActivityMenu);
+characterChatProfileGrid.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-character-chat-index]");
+  if (!button) return;
+  selectCharacterChatCharacter(Number(button.dataset.characterChatIndex));
+});
+characterChatForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  submitCharacterChatMessage(characterChatInput.value);
+});
+teacherGateBackButton.addEventListener("click", goToActivityMenu);
+teacherDashboardBackButton.addEventListener("click", goToActivityMenu);
+teacherGateForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const code = teacherGateCodeInput.value.trim();
+  if (!code) {
+    setTeacherGateStatus("교사용 코드를 입력해 주세요.", true);
+    teacherGateCodeInput.focus();
+    return;
+  }
+
+  loadTeacherResultsFromCode(code, { animateDoor: true });
+});
+teacherRefreshButton.addEventListener("click", () => {
+  if (!teacherState.accessCode) {
+    goToTeacherGate();
+    return;
+  }
+
+  loadTeacherResultsFromCode(teacherState.accessCode);
+});
+teacherStudentSearchInput.addEventListener("input", () => {
+  renderTeacherStudentList();
+  renderTeacherStudentDetail();
+});
+teacherStudentList.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-student-key]");
+  if (!button) return;
+  teacherState.selectedStudentKey = button.dataset.studentKey;
+  const student = teacherState.students.find((item) => item.studentKey === teacherState.selectedStudentKey);
+  teacherState.selectedActivityTab = student ? getPreferredTeacherActivityTab(student) : "";
+  renderTeacherStudentList();
+  renderTeacherStudentDetail();
+});
 scenarioStepForm.addEventListener("submit", handleTitleScenarioFormSubmit);
 scenarioChoicePanel.addEventListener("click", handleTitleScenarioChoiceClick);
 window.addEventListener("resize", requestViewportSync);
@@ -2615,5 +3601,6 @@ window.visualViewport?.addEventListener("scroll", requestViewportSync);
 
 syncViewportMetrics();
 hydrateStudentProfileForm();
+renderTeacherDashboard();
 setActiveScreen(activeScreenId);
 loadBooks();
