@@ -68,12 +68,16 @@ function buildParticipations(records) {
         sessionId: record.sessionId || "",
         startedAt: record.createdAt || "",
         latestAt: record.createdAt || "",
+        nickname: record.nickname || "",
+        nicknames: [],
         records: []
       });
     }
 
     const group = groups.get(key);
     group.records.push(record);
+    if (record.nickname && !group.nicknames.includes(record.nickname)) group.nicknames.push(record.nickname);
+    if (record.nickname) group.nickname = record.nickname;
     if (!group.startedAt || String(record.createdAt).localeCompare(String(group.startedAt)) < 0) {
       group.startedAt = record.createdAt;
     }
@@ -95,12 +99,12 @@ function getStudentLabel(student) {
   const normalized = normalizeStudent(student);
   const className = normalized.className ? `${normalized.className}반` : "";
   const number = normalized.number ? `${normalized.number}번` : "";
-  const nickname = normalized.nickname || "닉네임 없음";
-  return [className, number, nickname].filter(Boolean).join(" ");
+  return [className, number].filter(Boolean).join(" ");
 }
 
 function summarizeRecord(item) {
   const assessment = item.assessment || {};
+  const student = normalizeStudent(item.student);
   const totalScore = assessment.totalScore ?? null;
   const maxScore = assessment.maxScore ?? null;
 
@@ -111,6 +115,7 @@ function summarizeRecord(item) {
     activityId: item.activityId || "",
     createdAt: getCreatedAt(item),
     sessionId: item.sessionId || "",
+    nickname: student.nickname,
     bookId: item.bookId || "",
     bookTitle: item.bookTitle || "",
     characterName: item.characterName || "",
