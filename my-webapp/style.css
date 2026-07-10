@@ -2042,7 +2042,7 @@ body[data-active-screen="teacherDashboardScreen"] .screen-arrow-nav {
   position: absolute;
   top: clamp(58px, 8vh, 82px);
   right: clamp(22px, 3vw, 48px);
-  bottom: clamp(24px, 4vh, 48px);
+  bottom: auto;
   z-index: 4;
   display: flex;
   flex-direction: column;
@@ -2058,7 +2058,7 @@ body[data-active-screen="teacherDashboardScreen"] .screen-arrow-nav {
 }
 
 .adventure-screen.is-answer-guess-mode .adventure-hud {
-  bottom: clamp(24px, 4vh, 48px);
+  bottom: auto;
 }
 
 .adventure-screen.is-answer-guess-mode .hud-book-card {
@@ -2180,7 +2180,7 @@ body[data-active-screen="teacherDashboardScreen"] .screen-arrow-nav {
   align-self: center;
   flex: 0 0 auto;
   min-height: 48px;
-  margin: auto 24px 26px;
+  margin: 14px 24px 24px;
   padding: 0 22px;
   border: 1px solid rgba(255, 229, 184, 0.34);
   border-radius: 8px;
@@ -2369,8 +2369,8 @@ body[data-active-screen="teacherDashboardScreen"] .screen-arrow-nav {
 
 .dialogue-box {
   position: absolute;
-  left: clamp(24px, 6vw, 92px);
-  right: calc(var(--hud-width) + var(--hud-gap) + clamp(22px, 3vw, 48px));
+  left: clamp(20px, 4vw, 72px);
+  right: calc(var(--hud-width) + clamp(22px, 3vw, 48px) + clamp(20px, 1.8vw, 34px));
   bottom: 0;
   z-index: 3;
   display: flex;
@@ -3207,7 +3207,7 @@ body[data-active-screen="teacherDashboardScreen"] .screen-arrow-nav {
 
   .adventure-hud {
     top: 52px;
-    bottom: 18px;
+    bottom: auto;
   }
 
   .hud-book-card {
@@ -3230,7 +3230,7 @@ body[data-active-screen="teacherDashboardScreen"] .screen-arrow-nav {
 
   .answer-guess-button {
     min-height: 40px;
-    margin: auto 18px 18px;
+    margin: 12px 18px 18px;
     padding: 0 12px;
     font-size: 13px;
   }
