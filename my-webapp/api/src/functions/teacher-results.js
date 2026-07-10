@@ -58,6 +58,39 @@ function compareCreatedAt(a, b) {
   return String(getCreatedAt(a)).localeCompare(String(getCreatedAt(b)));
 }
 
+function buildParticipations(records) {
+  const groups = new Map();
+
+  records.forEach((record) => {
+    const key = record.sessionId || "legacy-records";
+    if (!groups.has(key)) {
+      groups.set(key, {
+        sessionId: record.sessionId || "",
+        startedAt: record.createdAt || "",
+        latestAt: record.createdAt || "",
+        records: []
+      });
+    }
+
+    const group = groups.get(key);
+    group.records.push(record);
+    if (!group.startedAt || String(record.createdAt).localeCompare(String(group.startedAt)) < 0) {
+      group.startedAt = record.createdAt;
+    }
+    if (!group.latestAt || String(record.createdAt).localeCompare(String(group.latestAt)) > 0) {
+      group.latestAt = record.createdAt;
+    }
+  });
+
+  return Array.from(groups.values())
+    .sort((a, b) => String(a.startedAt).localeCompare(String(b.startedAt)))
+    .map((group, index) => ({
+      ...group,
+      participationNumber: index + 1,
+      recordCount: group.records.length
+    }));
+}
+
 function getStudentLabel(student) {
   const normalized = normalizeStudent(student);
   const className = normalized.className ? `${normalized.className}반` : "";
@@ -146,6 +179,8 @@ function groupByStudent(items) {
     group.records.sort(compareCreatedAt);
     group.nicknames = Array.from(group.nicknames);
     group.label = getStudentLabel(group);
+    group.participations = buildParticipations(group.records);
+    group.participationCount = group.participations.length;
     return group;
   }).sort((a, b) => {
     const classCompare = String(a.className).localeCompare(String(b.className), "ko", { numeric: true });

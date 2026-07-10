@@ -762,9 +762,8 @@ textarea:focus-visible {
 }
 
 .teacher-secret-button {
-  justify-self: end;
+  flex: 0 0 auto;
   min-height: 34px;
-  margin-top: 2px;
   padding: 7px 12px;
   border: 1px solid rgba(255, 226, 174, 0.24);
   border-radius: 8px;
@@ -773,6 +772,18 @@ textarea:focus-visible {
   font-size: 12px;
   font-weight: 900;
   cursor: pointer;
+}
+
+.profile-teacher-access {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 229, 184, 0.16);
+  color: rgba(255, 244, 220, 0.62);
+  font-size: 13px;
 }
 
 .teacher-secret-button:hover {
@@ -1060,7 +1071,7 @@ body[data-active-screen="teacherDashboardScreen"] .screen-arrow-nav {
 
 .teacher-summary-strip {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(126px, 1fr));
   gap: 12px;
 }
 
@@ -1289,6 +1300,64 @@ body[data-active-screen="teacherDashboardScreen"] .screen-arrow-nav {
   display: grid;
   gap: 12px;
   margin-top: 16px;
+}
+
+.teacher-participation-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.teacher-participation {
+  overflow: hidden;
+  border: 1px solid rgba(255, 229, 184, 0.2);
+  border-radius: 8px;
+  background: rgba(18, 10, 6, 0.44);
+}
+
+.teacher-participation[open] {
+  border-color: rgba(255, 229, 184, 0.34);
+  background:
+    linear-gradient(180deg, rgba(217, 175, 98, 0.08), transparent 120px),
+    rgba(18, 10, 6, 0.5);
+}
+
+.teacher-participation-summary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 58px;
+  padding: 12px 14px;
+  color: #fff4dc;
+  cursor: pointer;
+  list-style-position: inside;
+}
+
+.teacher-participation-summary:hover {
+  background: rgba(217, 175, 98, 0.1);
+}
+
+.teacher-participation-summary strong {
+  color: #ffe4ad;
+  font-size: 15px;
+}
+
+.teacher-participation-summary span,
+.teacher-participation-summary small {
+  color: rgba(255, 244, 220, 0.66);
+  line-height: 1.45;
+}
+
+.teacher-participation-summary small {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.teacher-participation-records {
+  display: grid;
+  gap: 12px;
+  padding: 0 14px 14px;
 }
 
 .teacher-timeline-card {
@@ -1563,50 +1632,10 @@ body[data-active-screen="teacherDashboardScreen"] .screen-arrow-nav {
 
 .character-chat-room {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  grid-template-rows: minmax(0, 1fr) auto auto;
   gap: 12px;
   overflow: hidden;
   padding: 14px;
-}
-
-.character-chat-persona {
-  display: grid;
-  gap: 9px;
-  padding: 14px;
-  border: 1px solid rgba(255, 229, 184, 0.16);
-  border-radius: 8px;
-  background: rgba(255, 244, 220, 0.045);
-}
-
-.character-chat-persona-title {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-}
-
-.character-chat-persona-title strong {
-  color: #fff4dc;
-  font-size: 22px;
-}
-
-.character-chat-persona-title span {
-  color: #ffe4ad;
-  font-size: 13px;
-  font-weight: 900;
-}
-
-.character-chat-persona p,
-.character-chat-persona li {
-  margin: 0;
-  color: rgba(255, 244, 220, 0.74);
-  line-height: 1.56;
-}
-
-.character-chat-persona ul {
-  display: grid;
-  gap: 4px;
-  margin: 0;
-  padding-left: 18px;
 }
 
 .character-chat-log {
@@ -3386,6 +3415,11 @@ body[data-active-screen="teacherDashboardScreen"] .screen-arrow-nav {
     padding: 72px 18px 24px;
   }
 
+  .profile-teacher-access {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
   .activity-menu-screen,
   .teacher-gate-screen,
   .teacher-dashboard-screen,
@@ -3428,7 +3462,20 @@ body[data-active-screen="teacherDashboardScreen"] .screen-arrow-nav {
   }
 
   .teacher-secret-button {
-    justify-self: stretch;
+    width: 100%;
+  }
+
+  .teacher-participation-summary {
+    grid-template-columns: 1fr auto;
+  }
+
+  .teacher-participation-summary::marker {
+    color: #ffe4ad;
+  }
+
+  .teacher-participation-summary small {
+    grid-column: 1 / -1;
+    text-align: left;
   }
 
   .secret-door-panel {

@@ -46,8 +46,8 @@
     "bookTitle": "메밀꽃 필 무렵",
     "answer": "동이는 허 생원의 아들일 가능성이 크다. 동이의 행동과 허 생원의 옛이야기가 연결되기 때문이다.",
     "assessment": {
-      "totalScore": 9,
-      "maxScore": 10,
+      "totalScore": 14,
+      "maxScore": 15,
       "scores": [
         {
           "id": "inquiry",
@@ -60,6 +60,12 @@
           "label": "추리 결론",
           "score": 5,
           "comment": "최종 답안이 핵심 단서와 잘 이어졌고 이유도 함께 적었어요."
+        },
+        {
+          "id": "rational-inference",
+          "label": "합리적 추론",
+          "score": 5,
+          "comment": "정답과 함께 동이의 행동과 허 생원의 옛이야기를 적합한 근거로 제시했어요."
         }
       ],
       "summary": "질문으로 단서를 모으고 마지막 결론까지 잘 연결한 활동이었어요.",

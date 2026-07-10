@@ -1,6 +1,5 @@
 const { app } = require("@azure/functions");
-const { badRequest, json, readJson } = require("../shared/http");
-const { buildPracticeCharacterReply } = require("../shared/demo");
+const { aiUnavailable, badRequest, json, readJson } = require("../shared/http");
 const { completeChat, isOpenAIConfigured } = require("../shared/openai");
 const { buildCharacterChatMessages } = require("../shared/prompts");
 const { saveAdventureEvent } = require("../shared/store");
@@ -16,31 +15,19 @@ app.http("characterChat", {
       return badRequest("book.id, character.name, and message are required.");
     }
 
+    if (!isOpenAIConfigured()) return aiUnavailable();
+
     let reply = "";
-    let mode = "practice";
-    let openAIError = "";
-
-    if (isOpenAIConfigured()) {
-      try {
-        const aiReply = await completeChat(buildCharacterChatMessages(payload), {
-          temperature: 0.56,
-          maxTokens: 1200
-        });
-        if (aiReply && aiReply.trim()) {
-          reply = aiReply.trim();
-          mode = "azure-openai";
-        } else {
-          openAIError = "Azure OpenAI returned an empty character reply.";
-          context.log(`Azure OpenAI character chat fallback: ${openAIError}`);
-        }
-      } catch (error) {
-        openAIError = error.message;
-        context.log(`Azure OpenAI character chat fallback: ${openAIError}`);
-      }
-    }
-
-    if (!reply) {
-      reply = buildPracticeCharacterReply(payload);
+    try {
+      const aiReply = await completeChat(buildCharacterChatMessages(payload), {
+        temperature: 0.56,
+        maxTokens: 1200
+      });
+      reply = String(aiReply || "").trim();
+      if (!reply) throw new Error("Azure OpenAI returned an empty character reply.");
+    } catch (error) {
+      context.log(`Azure OpenAI character chat failed: ${error.message}`);
+      return aiUnavailable();
     }
 
     await saveAdventureEvent({
@@ -56,13 +43,12 @@ app.http("characterChat", {
       studentMessage: payload.message,
       characterReply: reply,
       conversation: Array.isArray(payload.conversation) ? payload.conversation.slice(-16) : [],
-      mode
+      mode: "azure-openai"
     }, context);
 
     return json(200, {
       reply,
-      mode,
-      openAIError: openAIError ? openAIError.slice(0, 700) : "",
+      mode: "azure-openai",
       sessionId: payload.sessionId || null
     });
   }
