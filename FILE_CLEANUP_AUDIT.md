@@ -16,7 +16,9 @@ GitHub Actions는 `my-webapp`을 임시 `swa-static-app`으로 복사한 뒤 `sw
 - `my-webapp/adventure-turn.js`, `my-webapp/health.js`, `my-webapp/openai.js`
 - `my-webapp/api/test/browser-fixture-server.js` 임시 브라우저 시험 서버
 
-루트 `assets`의 PNG 14개도 모두 `my-webapp/assets` 파일과 SHA-256이 같은 배포 제외 복사본입니다. 사용자가 향후 표지와 인물 이미지를 추가할 계획이므로 이미지·에셋은 정리 대상에서 제외하며 삭제하거나 수정하지 않습니다.
+루트 `assets`의 PNG 14개도 모두 `my-webapp/assets`의 대응 파일과 SHA-256이 같고 앱·문서·배포 설정에서 참조되지 않는 배포 제외 복사본이었습니다. 이후 사용자가 루트 중복 파일 정리를 요청해 루트 `assets`만 제거했습니다. `my-webapp/assets`의 실제 앱 에셋은 수정하거나 제거하지 않았습니다.
+
+루트 `docs`는 이전 중복 문서 제거 뒤 비어 있던 폴더이므로 함께 제거했습니다.
 
 ## 현재 사용 중
 
@@ -31,12 +33,12 @@ GitHub Actions는 `my-webapp`을 임시 `swa-static-app`으로 복사한 뒤 `sw
 
 ## 판단 보류
 
-- 루트 `assets/**`: 현재 내용은 배포 폴더와 중복이지만 향후 이미지 추가 계획이 있어 사용자 요청에 따라 유지
+- 루트 `.agents`, `.codex`: 현재 비어 있지만 작업 도구가 사용하는 예약 폴더일 수 있어 유지
 - `my-webapp/teacher-review.html`: 현재는 `index.html`로 이동시키는 호환용 주소이며 외부 북마크 사용 여부를 저장소만으로 확인할 수 없어 유지
 - `my-webapp/docs/teacher-review-sample.json`: 코드에서 읽지는 않지만 교사용 결과 형식 확인 자료로 문서에서 요구하는 실제 산출물일 수 있어 유지
 - `NEXT_CHAT_HANDOFF.md`: 내용 일부가 오래됐지만 작업 이력 보존 문서이므로 유지
 
-`books.json`의 향후 표지 JPG 경로와 모든 인물 이미지 경로는 사용자가 이미지를 추가할 수 있도록 그대로 유지합니다. 이미지·에셋 파일은 이번 정리에서 손대지 않습니다.
+이번 정리는 저장소 루트의 완전 중복 PNG에만 한정했습니다. `my-webapp/assets`의 표지·인물·장소 이미지와 해당 경로는 모두 유지합니다.
 
 ## `file://` 지원 판단
 
