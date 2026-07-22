@@ -1054,8 +1054,14 @@ body[data-active-screen="teacherDashboardScreen"] .screen-arrow-nav {
   overflow-y: auto;
 }
 
+.teacher-dashboard-screen::before {
+  background:
+    linear-gradient(90deg, rgba(12, 7, 4, 0.8), rgba(12, 7, 4, 0.62)),
+    linear-gradient(180deg, rgba(10, 5, 3, 0.34), rgba(10, 5, 3, 0.94));
+}
+
 .teacher-dashboard-shell {
-  width: min(1240px, 100%);
+  width: min(1320px, 100%);
   display: grid;
   gap: 16px;
   margin: 0 auto;
@@ -1063,15 +1069,15 @@ body[data-active-screen="teacherDashboardScreen"] .screen-arrow-nav {
 
 .teacher-dashboard-header {
   display: flex;
-  align-items: end;
+  align-items: center;
   justify-content: space-between;
   gap: 18px;
-  padding: 20px;
+  padding: 18px 20px;
   border: 1px solid var(--line-gold);
   border-radius: 8px;
   background:
     linear-gradient(180deg, rgba(255, 244, 220, 0.06), rgba(255, 244, 220, 0.025)),
-    rgba(18, 10, 6, 0.82);
+    rgba(18, 10, 6, 0.96);
   box-shadow: var(--shadow-warm);
   backdrop-filter: blur(14px);
 }
@@ -1079,15 +1085,16 @@ body[data-active-screen="teacherDashboardScreen"] .screen-arrow-nav {
 .teacher-dashboard-header h2 {
   margin: 0;
   color: #fff4dc;
-  font-size: clamp(30px, 4vw, 48px);
-  line-height: 1.1;
+  font-size: clamp(30px, 3.4vw, 42px);
+  line-height: 1.12;
 }
 
 .teacher-dashboard-header p:not(.section-label) {
   max-width: 760px;
   margin: 8px 0 0;
-  color: rgba(255, 244, 220, 0.78);
-  line-height: 1.7;
+  color: rgba(255, 244, 220, 0.88);
+  font-size: 15px;
+  line-height: 1.6;
 }
 
 .teacher-dashboard-actions {
@@ -1111,30 +1118,38 @@ body[data-active-screen="teacherDashboardScreen"] .screen-arrow-nav {
 
 .teacher-summary-strip {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(126px, 1fr));
+  grid-template-columns: minmax(0, 1fr) minmax(290px, 0.34fr);
   gap: 12px;
 }
 
+.teacher-summary-primary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
 .teacher-summary-item,
+.teacher-activity-summary,
 .teacher-student-panel,
 .teacher-student-detail {
   border: 1px solid var(--line-gold);
   border-radius: 8px;
   background:
     linear-gradient(180deg, rgba(255, 244, 220, 0.06), rgba(255, 244, 220, 0.025)),
-    rgba(18, 10, 6, 0.82);
+    rgba(18, 10, 6, 0.96);
   box-shadow: 0 22px 54px rgba(0, 0, 0, 0.38);
   backdrop-filter: blur(14px);
 }
 
 .teacher-summary-item {
-  padding: 16px;
+  min-width: 0;
+  padding: 15px 16px;
 }
 
 .teacher-summary-item span {
   display: block;
-  color: rgba(255, 244, 220, 0.68);
-  font-size: 13px;
+  color: rgba(255, 244, 220, 0.84);
+  font-size: 14px;
   font-weight: 850;
 }
 
@@ -1142,7 +1157,7 @@ body[data-active-screen="teacherDashboardScreen"] .screen-arrow-nav {
   display: block;
   margin-top: 4px;
   color: #ffe4ad;
-  font-size: 30px;
+  font-size: 29px;
   letter-spacing: -0.02em;
 }
 
@@ -1183,7 +1198,31 @@ body[data-active-screen="teacherDashboardScreen"] .screen-arrow-nav {
 }
 
 .teacher-student-panel-header input::placeholder {
-  color: rgba(255, 244, 220, 0.42);
+  color: rgba(255, 244, 220, 0.62);
+}
+
+.teacher-student-select-label {
+  display: none;
+  gap: 6px;
+  color: rgba(255, 244, 220, 0.82);
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.teacher-student-select-label select {
+  width: 100%;
+  min-height: 46px;
+  border: 1px solid rgba(255, 226, 174, 0.32);
+  border-radius: 8px;
+  padding: 9px 36px 9px 12px;
+  background: #21140e;
+  color: #fff4dc;
+  font: inherit;
+}
+
+.teacher-student-select-label select:focus-visible {
+  outline: 2px solid rgba(255, 228, 173, 0.88);
+  outline-offset: 2px;
 }
 
 .teacher-student-list {
@@ -1207,9 +1246,10 @@ body[data-active-screen="teacherDashboardScreen"] .screen-arrow-nav {
 
 .teacher-student-button {
   display: grid;
-  gap: 4px;
+  gap: 5px;
   width: 100%;
-  padding: 13px;
+  min-height: 92px;
+  padding: 14px;
   text-align: left;
 }
 
@@ -1220,7 +1260,7 @@ body[data-active-screen="teacherDashboardScreen"] .screen-arrow-nav {
   border-color: rgba(255, 229, 184, 0.4);
   background:
     linear-gradient(180deg, rgba(217, 175, 98, 0.18), rgba(255, 244, 220, 0.06)),
-    rgba(18, 10, 6, 0.54);
+    rgba(27, 17, 11, 0.9);
 }
 
 .teacher-student-button.is-selected {
@@ -1229,16 +1269,19 @@ body[data-active-screen="teacherDashboardScreen"] .screen-arrow-nav {
 
 .teacher-student-button strong {
   color: #fff4dc;
-  font-size: 17px;
+  font-size: 18px;
 }
 
 .teacher-student-button span,
 .teacher-student-button small {
-  color: rgba(255, 244, 220, 0.66);
+  color: rgba(255, 244, 220, 0.8);
+  font-size: 14px;
+  line-height: 1.45;
 }
 
 .teacher-student-detail {
   min-height: 420px;
+  min-width: 0;
   padding: 18px;
 }
 
@@ -1246,7 +1289,7 @@ body[data-active-screen="teacherDashboardScreen"] .screen-arrow-nav {
   display: flex;
   justify-content: space-between;
   gap: 16px;
-  align-items: start;
+  align-items: center;
   padding-bottom: 16px;
   border-bottom: 1px solid rgba(255, 229, 184, 0.18);
 }
@@ -1270,8 +1313,18 @@ body[data-active-screen="teacherDashboardScreen"] .screen-arrow-nav {
 .teacher-nickname-note,
 .teacher-timeline-note {
   margin: 0;
-  color: rgba(255, 244, 220, 0.72);
+  color: rgba(255, 244, 220, 0.84);
   line-height: 1.7;
+}
+
+.teacher-detail-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 14px;
+  margin-top: 7px;
+  color: rgba(255, 244, 220, 0.84);
+  font-size: 14px;
+  font-weight: 750;
 }
 
 .teacher-detail-header button {
@@ -1281,10 +1334,22 @@ body[data-active-screen="teacherDashboardScreen"] .screen-arrow-nav {
 }
 
 .teacher-detail-actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, auto));
   gap: 8px;
+}
+
+.teacher-detail-actions button {
+  border-color: rgba(255, 229, 184, 0.28);
+  background: rgba(255, 244, 220, 0.07);
+  color: #f8e6c5;
+  box-shadow: none;
+  font-size: 14px;
+}
+
+.teacher-detail-actions button:hover {
+  border-color: rgba(255, 229, 184, 0.48);
+  background: rgba(217, 175, 98, 0.14);
 }
 
 .teacher-nickname-note {
@@ -1292,7 +1357,8 @@ body[data-active-screen="teacherDashboardScreen"] .screen-arrow-nav {
   padding: 10px 12px;
   border: 1px solid rgba(255, 229, 184, 0.14);
   border-radius: 8px;
-  background: rgba(255, 244, 220, 0.07);
+  background: rgba(255, 244, 220, 0.055);
+  font-size: 14px;
   font-weight: 750;
 }
 
@@ -1326,6 +1392,10 @@ body[data-active-screen="teacherDashboardScreen"] .screen-arrow-nav {
   background: var(--gold);
   color: #1c1009;
   font-size: 13px;
+}
+
+.teacher-activity-tab-button.is-selected {
+  box-shadow: inset 0 -3px 0 var(--gold);
 }
 
 .teacher-activity-tab-button:disabled {
@@ -1371,8 +1441,8 @@ body[data-active-screen="teacherDashboardScreen"] .screen-arrow-nav {
 
 .teacher-score-trend-heading p,
 .teacher-score-trend-note {
-  color: rgba(255, 244, 220, 0.68);
-  font-size: 13px;
+  color: rgba(255, 244, 220, 0.78);
+  font-size: 14px;
 }
 
 .teacher-score-trend-chart-wrap {
@@ -1421,12 +1491,26 @@ body[data-active-screen="teacherDashboardScreen"] .screen-arrow-nav {
 }
 
 .teacher-score-trend-empty {
-  padding: 22px;
-  border: 1px dashed rgba(255, 229, 184, 0.22);
-  border-radius: 8px;
-  color: rgba(255, 244, 220, 0.68);
-  text-align: center;
+  color: rgba(255, 244, 220, 0.8);
   font-weight: 800;
+}
+
+.teacher-score-trend.is-empty {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+  padding: 12px 14px;
+  background: rgba(18, 10, 6, 0.58);
+}
+
+.teacher-score-trend.is-empty .teacher-score-trend-heading h4 {
+  font-size: 16px;
+  white-space: nowrap;
+}
+
+.teacher-score-trend.is-empty .teacher-score-trend-empty {
+  padding-left: 16px;
+  border-left: 1px solid rgba(255, 229, 184, 0.2);
 }
 
 .teacher-timeline-note {
@@ -1450,7 +1534,7 @@ body[data-active-screen="teacherDashboardScreen"] .screen-arrow-nav {
   overflow: hidden;
   border: 1px solid rgba(255, 229, 184, 0.2);
   border-radius: 8px;
-  background: rgba(18, 10, 6, 0.44);
+  background: rgba(18, 10, 6, 0.68);
 }
 
 .teacher-participation[open] {
@@ -1462,7 +1546,7 @@ body[data-active-screen="teacherDashboardScreen"] .screen-arrow-nav {
 
 .teacher-participation-summary {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: auto auto minmax(0, 1fr);
   align-items: center;
   gap: 12px;
   min-height: 58px;
@@ -1482,14 +1566,22 @@ body[data-active-screen="teacherDashboardScreen"] .screen-arrow-nav {
 }
 
 .teacher-participation-summary span,
+.teacher-participation-summary time,
 .teacher-participation-summary small {
-  color: rgba(255, 244, 220, 0.66);
+  color: rgba(255, 244, 220, 0.8);
   line-height: 1.45;
 }
 
-.teacher-participation-summary small {
-  text-align: right;
-  white-space: nowrap;
+.teacher-participation-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px 14px;
+  min-width: 0;
+}
+
+.teacher-participation-meta small {
+  font-size: 13px;
 }
 
 .teacher-participation-records {
@@ -1507,7 +1599,7 @@ body[data-active-screen="teacherDashboardScreen"] .screen-arrow-nav {
   border-radius: 8px;
   background:
     linear-gradient(180deg, rgba(255, 244, 220, 0.065), rgba(255, 244, 220, 0.025)),
-    rgba(18, 10, 6, 0.48);
+    rgba(18, 10, 6, 0.72);
 }
 
 .teacher-timeline-card::before {
@@ -1530,19 +1622,17 @@ body[data-active-screen="teacherDashboardScreen"] .screen-arrow-nav {
   gap: 12px;
 }
 
-.teacher-timeline-header span {
-  padding: 5px 9px;
-  border: 1px solid rgba(255, 229, 184, 0.18);
-  border-radius: 999px;
-  background: rgba(217, 175, 98, 0.12);
+.teacher-timeline-header h5 {
+  margin: 0;
   color: #ffe4ad;
-  font-size: 12px;
+  font-size: 16px;
   font-weight: 900;
 }
 
 .teacher-timeline-header time,
 .teacher-book-line {
-  color: rgba(255, 244, 220, 0.64);
+  color: rgba(255, 244, 220, 0.78);
+  font-size: 14px;
   font-weight: 750;
 }
 
@@ -1559,12 +1649,14 @@ body[data-active-screen="teacherDashboardScreen"] .screen-arrow-nav {
 
 .teacher-detail-block strong {
   color: #ffe4ad;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .teacher-detail-block p,
 .teacher-score-row p {
   margin: 0;
+  color: #fff4dc;
+  font-size: 15px;
   line-height: 1.65;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -1617,7 +1709,7 @@ body[data-active-screen="teacherDashboardScreen"] .screen-arrow-nav {
 
 .teacher-score-row p {
   grid-column: 1 / -1;
-  color: rgba(255, 244, 220, 0.68);
+  color: rgba(255, 244, 220, 0.82);
 }
 
 .teacher-empty-state {
@@ -1626,9 +1718,47 @@ body[data-active-screen="teacherDashboardScreen"] .screen-arrow-nav {
   border: 1px dashed rgba(255, 229, 184, 0.26);
   border-radius: 8px;
   background: rgba(18, 10, 6, 0.36);
-  color: rgba(255, 244, 220, 0.7);
+  color: rgba(255, 244, 220, 0.82);
+  font-size: 15px;
   text-align: center;
   font-weight: 850;
+}
+
+.teacher-activity-summary {
+  display: grid;
+  align-content: center;
+  gap: 9px;
+  padding: 13px 15px;
+}
+
+.teacher-activity-summary h3 {
+  margin: 0;
+  color: rgba(255, 244, 220, 0.84);
+  font-size: 14px;
+}
+
+.teacher-activity-summary-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.teacher-activity-summary-list div {
+  display: grid;
+  gap: 2px;
+  padding-left: 9px;
+  border-left: 2px solid rgba(217, 175, 98, 0.5);
+}
+
+.teacher-activity-summary-list span {
+  color: rgba(255, 244, 220, 0.74);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.teacher-activity-summary-list strong {
+  color: #ffe4ad;
+  font-size: 18px;
 }
 
 .teacher-view-tabs {
@@ -3764,6 +3894,10 @@ body[data-active-screen="teacherDashboardScreen"] .screen-arrow-nav {
     grid-template-columns: 1fr;
   }
 
+  .teacher-summary-primary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .character-chat-panel {
     height: auto;
     grid-template-rows: auto auto;
@@ -3813,9 +3947,9 @@ body[data-active-screen="teacherDashboardScreen"] .screen-arrow-nav {
     color: #ffe4ad;
   }
 
-  .teacher-participation-summary small {
+  .teacher-participation-meta {
     grid-column: 1 / -1;
-    text-align: left;
+    justify-content: flex-start;
   }
 
   .secret-door-panel {
@@ -3852,8 +3986,12 @@ body[data-active-screen="teacherDashboardScreen"] .screen-arrow-nav {
     max-height: none;
   }
 
+  .teacher-student-select-label {
+    display: grid;
+  }
+
   .teacher-student-list {
-    max-height: 330px;
+    display: none;
   }
 
   .teacher-activity-tabs {
@@ -3864,6 +4002,16 @@ body[data-active-screen="teacherDashboardScreen"] .screen-arrow-nav {
     align-items: flex-start;
     flex-direction: column;
     gap: 4px;
+  }
+
+  .teacher-score-trend.is-empty {
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+
+  .teacher-score-trend.is-empty .teacher-score-trend-empty {
+    padding-left: 0;
+    border-left: 0;
   }
 
   .activity-card {
@@ -4094,6 +4242,10 @@ body[data-active-screen="teacherDashboardScreen"] .screen-arrow-nav {
 
 @media (max-width: 460px) {
   .teacher-summary-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .teacher-summary-primary {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -4106,7 +4258,7 @@ body[data-active-screen="teacherDashboardScreen"] .screen-arrow-nav {
   }
 
   .teacher-activity-tabs {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .teacher-score-row {

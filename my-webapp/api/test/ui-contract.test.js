@@ -66,3 +66,22 @@ test("title and activity layouts keep the requested responsive scroll contracts"
   assert.match(html, /id="characterChatProfileGrid" tabindex="0"/);
   assert.match(html, /id="characterChatLog" tabindex="0"/);
 });
+
+test("teacher results prioritize core metrics and use a compact empty score state", () => {
+  assert.match(html, /id="teacherStudentSelect"/);
+  assert.match(app, /coreGroup\.className = "teacher-summary-primary"/);
+  assert.match(app, /activityGroup\.className = "teacher-activity-summary"/);
+  assert.match(app, /meta\.className = "teacher-detail-metrics"/);
+  assert.match(app, /section\.classList\.add\("is-empty"\)/);
+  assert.match(css, /\.teacher-summary-primary\s*\{[^}]*grid-template-columns:\s*repeat\(4,/s);
+  assert.match(css, /\.teacher-score-trend\.is-empty\s*\{[^}]*grid-template-columns:\s*auto minmax\(0, 1fr\)/s);
+  assert.match(css, /@media \(max-width: 460px\)[\s\S]*\.teacher-summary-primary\s*\{[^}]*repeat\(2,/);
+  assert.match(css, /@media \(max-width: 860px\)[\s\S]*\.teacher-student-select-label\s*\{[^}]*display:\s*grid/);
+});
+
+test("Pinocchio uses optimized WebP artwork without PNG runtime paths", () => {
+  assert.match(books.find((book) => book.id === "pinocchio")?.cover || "", /\.webp$/);
+  assert.doesNotMatch(app, /pinocchio-[A-Za-z0-9-]+\.png/);
+  assert.match(app, /pinocchio-cover\.webp/);
+  assert.match(app, /pinocchio-place-03-great-fish\.webp/);
+});

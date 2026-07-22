@@ -67,6 +67,7 @@ const teacherDashboardBackButton = document.querySelector("#teacherDashboardBack
 const teacherDashboardStatus = document.querySelector("#teacherDashboardStatus");
 const teacherSummaryStrip = document.querySelector("#teacherSummaryStrip");
 const teacherStudentSearchInput = document.querySelector("#teacherStudentSearchInput");
+const teacherStudentSelect = document.querySelector("#teacherStudentSelect");
 const teacherStudentList = document.querySelector("#teacherStudentList");
 const teacherStudentDetail = document.querySelector("#teacherStudentDetail");
 const teacherStudentViewTab = document.querySelector("#teacherStudentViewTab");
@@ -763,7 +764,7 @@ const profileImageByBook = {
     "profiles/little-women-character-04-profile.webp"
   ],
   "pinocchio": [
-    "profiles/pinocchio-character-01-profile.webp",
+    "../covers/pinocchio-cover.webp",
     "profiles/pinocchio-character-02-profile.webp",
     "profiles/pinocchio-character-03-profile.webp"
   ]
@@ -854,9 +855,9 @@ const standingImageByBook = {
     "little-women-character-04-standing.webp"
   ],
   "pinocchio": [
-    "pinocchio-character-01-standing.webp",
-    "pinocchio-character-02-standing.webp",
-    "pinocchio-character-03-standing.webp"
+    "../covers/pinocchio-cover.webp",
+    "profiles/pinocchio-character-02-profile.webp",
+    "profiles/pinocchio-character-03-profile.webp"
   ]
 };
 
@@ -2389,18 +2390,22 @@ function renderTeacherSummary() {
   const activity2Count = teacherState.students.reduce((sum, student) => sum + student.activity2Count, 0);
   const activity3Count = teacherState.students.reduce((sum, student) => sum + student.activity3Count, 0);
   const assessmentCount = teacherState.students.reduce((sum, student) => sum + student.assessmentCount, 0);
-  const summaryItems = [
+  const coreItems = [
     ["학생", teacherState.students.length],
     ["참여 횟수", participationCount],
     ["전체 기록", recordCount],
-    ["활동 1 기록", activity1Count],
-    ["활동 2 기록", activity2Count],
-    ["활동 3 기록", activity3Count],
     ["평가 완료", assessmentCount]
+  ];
+  const activityItems = [
+    ["활동 1", activity1Count],
+    ["활동 2", activity2Count],
+    ["활동 3", activity3Count]
   ];
 
   teacherSummaryStrip.innerHTML = "";
-  summaryItems.forEach(([label, value]) => {
+  const coreGroup = document.createElement("div");
+  coreGroup.className = "teacher-summary-primary";
+  coreItems.forEach(([label, value]) => {
     const item = document.createElement("article");
     item.className = "teacher-summary-item";
     const labelElement = document.createElement("span");
@@ -2408,21 +2413,48 @@ function renderTeacherSummary() {
     const valueElement = document.createElement("strong");
     valueElement.textContent = String(value);
     item.append(labelElement, valueElement);
-    teacherSummaryStrip.appendChild(item);
+    coreGroup.appendChild(item);
   });
+
+  const activityGroup = document.createElement("section");
+  activityGroup.className = "teacher-activity-summary";
+  activityGroup.setAttribute("aria-label", "활동별 기록");
+  const activityTitle = document.createElement("h3");
+  activityTitle.textContent = "활동별 기록";
+  const activityList = document.createElement("div");
+  activityList.className = "teacher-activity-summary-list";
+  activityItems.forEach(([label, value]) => {
+    const item = document.createElement("div");
+    const labelElement = document.createElement("span");
+    labelElement.textContent = label;
+    const valueElement = document.createElement("strong");
+    valueElement.textContent = `${value}개`;
+    item.append(labelElement, valueElement);
+    activityList.appendChild(item);
+  });
+  activityGroup.append(activityTitle, activityList);
+  teacherSummaryStrip.append(coreGroup, activityGroup);
 }
 
 function renderTeacherStudentList() {
   const visibleStudents = getVisibleTeacherStudents();
   teacherStudentList.innerHTML = "";
+  teacherStudentSelect.innerHTML = "";
 
   if (!visibleStudents.length) {
     const empty = document.createElement("p");
     empty.className = "teacher-empty-state";
     empty.textContent = teacherState.students.length ? "검색에 맞는 학생이 없습니다." : "아직 불러온 학생 기록이 없습니다.";
     teacherStudentList.appendChild(empty);
+    const option = document.createElement("option");
+    option.textContent = teacherState.students.length ? "검색 결과 없음" : "학생 기록 없음";
+    option.value = "";
+    teacherStudentSelect.appendChild(option);
+    teacherStudentSelect.disabled = true;
     return;
   }
+
+  teacherStudentSelect.disabled = false;
 
   if (!teacherState.selectedStudentKey || !visibleStudents.some((student) => student.studentKey === teacherState.selectedStudentKey)) {
     teacherState.selectedStudentKey = visibleStudents[0].studentKey;
@@ -2430,6 +2462,12 @@ function renderTeacherStudentList() {
   }
 
   visibleStudents.forEach((student) => {
+    const option = document.createElement("option");
+    option.value = student.studentKey;
+    option.textContent = `${student.className || "-"}반 ${student.number || "-"}번 / 참여 ${student.participationCount}회`;
+    option.selected = student.studentKey === teacherState.selectedStudentKey;
+    teacherStudentSelect.appendChild(option);
+
     const button = document.createElement("button");
     button.type = "button";
     button.className = "teacher-student-button";
@@ -2438,11 +2476,11 @@ function renderTeacherStudentList() {
 
     const title = document.createElement("strong");
     title.textContent = `${student.className || "-"}반 ${student.number || "-"}번`;
-    const nickname = document.createElement("span");
-    nickname.textContent = student.nickname ? `최근 활동 닉네임: ${student.nickname}` : "활동 닉네임 기록 없음";
+    const latest = document.createElement("span");
+    latest.textContent = `최근 참여 ${teacherShortDate(student.latestAt)}`;
     const meta = document.createElement("small");
-    meta.textContent = `참여 ${student.participationCount}회 · 활동 1 ${student.activity1Count}개 · 활동 2 ${student.activity2Count}개 · 활동 3 ${student.activity3Count}개 · 최근 ${teacherShortDate(student.latestAt)}`;
-    button.append(title, nickname, meta);
+    meta.textContent = `참여 ${student.participationCount}회 / 기록 ${student.recordCount}개`;
+    button.append(title, latest, meta);
     teacherStudentList.appendChild(button);
   });
 }
@@ -2479,7 +2517,7 @@ function renderTeacherRecord(record) {
 
   const header = document.createElement("header");
   header.className = "teacher-timeline-header";
-  const type = document.createElement("span");
+  const type = document.createElement("h5");
   type.textContent = record.typeLabel;
   const time = document.createElement("time");
   time.textContent = teacherShortDate(record.createdAt);
@@ -2640,22 +2678,26 @@ function createTeacherSvgElement(tagName, attributes = {}) {
 function renderTeacherScoreTrend(student) {
   const section = document.createElement("section");
   section.className = "teacher-score-trend";
+  const points = getTeacherAssessmentPoints(student, teacherState.selectedActivityTab || "all");
   const heading = document.createElement("div");
   heading.className = "teacher-score-trend-heading";
   const title = document.createElement("h4");
   title.textContent = "참여별 점수 변화";
-  const description = document.createElement("p");
-  description.textContent = "평가 총점을 15점 기준으로 맞춰 참여 순서대로 이어 봅니다.";
-  heading.append(title, description);
+  heading.appendChild(title);
+  if (points.length) {
+    const description = document.createElement("p");
+    description.textContent = "평가 총점을 15점 기준으로 맞춰 참여 순서대로 이어 봅니다.";
+    heading.appendChild(description);
+  }
   section.appendChild(heading);
 
-  const points = getTeacherAssessmentPoints(student, teacherState.selectedActivityTab || "all");
   if (!points.length) {
+    section.classList.add("is-empty");
     const empty = document.createElement("p");
     empty.className = "teacher-score-trend-empty";
     empty.textContent = teacherState.selectedActivityTab === "activity1" || teacherState.selectedActivityTab === "activity3" || teacherState.selectedActivityTab === "session"
-      ? "이 활동에는 아직 점수 평가가 없습니다. 전체 또는 활동 2 탭에서 점수 변화를 확인하세요."
-      : "평가 점수가 쌓이면 참여 회차별 변화가 여기에 선으로 표시됩니다.";
+      ? "이 활동에는 점수 평가가 없습니다. 전체 또는 활동 2에서 확인하세요."
+      : "평가 점수가 아직 없습니다.";
     section.appendChild(empty);
     return section;
   }
@@ -2893,12 +2935,23 @@ function renderTeacherParticipations(student, records) {
     summary.className = "teacher-participation-summary";
     const title = document.createElement("strong");
     title.textContent = `${participation.participationNumber || 1}번째 참여`;
-    const date = document.createElement("span");
+    const date = document.createElement("time");
+    date.dateTime = participation.startedAt || "";
     date.textContent = teacherShortDate(participation.startedAt);
-    const meta = document.createElement("small");
+    const meta = document.createElement("span");
+    meta.className = "teacher-participation-meta";
     const books = Array.from(new Set(participation.records.map((record) => record.bookTitle).filter(Boolean)));
     const nickname = participation.nickname || "닉네임 기록 없음";
-    meta.textContent = `활동 닉네임: ${nickname} · ${participation.records.length}개 기록${books.length ? ` · ${books.join(", ")}` : ""}`;
+    const nicknameText = document.createElement("small");
+    nicknameText.textContent = `닉네임 ${nickname}`;
+    const recordText = document.createElement("small");
+    recordText.textContent = `기록 ${participation.records.length}개`;
+    meta.append(nicknameText, recordText);
+    if (books.length) {
+      const bookText = document.createElement("small");
+      bookText.textContent = `책 ${books.join(", ")}`;
+      meta.appendChild(bookText);
+    }
     summary.append(title, date, meta);
 
     const recordList = document.createElement("div");
@@ -2936,8 +2989,20 @@ function renderTeacherStudentDetail() {
   kicker.textContent = "학생 결과";
   const title = document.createElement("h3");
   title.textContent = `${student.className || "-"}반 ${student.number || "-"}번`;
-  const meta = document.createElement("p");
-  meta.textContent = `참여 ${student.participationCount}회 · 누적 기록 ${student.recordCount}개 · 활동 1 ${student.activity1Count}개 · 활동 2 ${student.activity2Count}개 · 활동 3 ${student.activity3Count}개 · 평가 ${student.assessmentCount}개`;
+  const meta = document.createElement("div");
+  meta.className = "teacher-detail-metrics";
+  [
+    ["참여", `${student.participationCount}회`],
+    ["누적 기록", `${student.recordCount}개`],
+    ["활동 1", `${student.activity1Count}개`],
+    ["활동 2", `${student.activity2Count}개`],
+    ["활동 3", `${student.activity3Count}개`],
+    ["평가", `${student.assessmentCount}개`]
+  ].forEach(([label, value]) => {
+    const metric = document.createElement("span");
+    metric.textContent = `${label} ${value}`;
+    meta.appendChild(metric);
+  });
   headerText.append(kicker, title, meta);
   header.appendChild(headerText);
 
@@ -5118,6 +5183,14 @@ teacherStudentList.addEventListener("click", (event) => {
   const button = event.target.closest("[data-student-key]");
   if (!button) return;
   teacherState.selectedStudentKey = button.dataset.studentKey;
+  const student = teacherState.students.find((item) => item.studentKey === teacherState.selectedStudentKey);
+  teacherState.selectedActivityTab = student ? getPreferredTeacherActivityTab(student) : "";
+  renderTeacherStudentList();
+  renderTeacherStudentDetail();
+});
+teacherStudentSelect.addEventListener("change", () => {
+  if (!teacherStudentSelect.value) return;
+  teacherState.selectedStudentKey = teacherStudentSelect.value;
   const student = teacherState.students.find((item) => item.studentKey === teacherState.selectedStudentKey);
   teacherState.selectedActivityTab = student ? getPreferredTeacherActivityTab(student) : "";
   renderTeacherStudentList();
