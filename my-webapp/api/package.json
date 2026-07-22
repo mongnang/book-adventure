@@ -5,7 +5,8 @@
   "type": "commonjs",
   "main": "src/functions/*.js",
   "scripts": {
-    "start": "func start"
+    "start": "func start",
+    "test": "node --test test/shared.test.js test/functions.test.js test/client-errors.test.js"
   },
   "engines": {
     "node": "20.x"

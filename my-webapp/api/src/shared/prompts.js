@@ -1,7 +1,25 @@
 const { getAdventureBook } = require("../data/book-adventures");
 
-function buildSystemPrompt(book) {
+function selectRelevantClues(clues = [], query = "", limit = 2) {
+  const normalized = Array.isArray(clues) ? clues.filter(Boolean).map(String) : [];
+  const terms = String(query || "")
+    .toLowerCase()
+    .match(/[\p{L}\p{N}]{2,}/gu) || [];
+
+  return normalized
+    .map((clue, index) => ({
+      clue,
+      index,
+      score: terms.reduce((sum, term) => sum + (clue.toLowerCase().includes(term) ? 1 : 0), 0)
+    }))
+    .sort((a, b) => b.score - a.score || a.index - b.index)
+    .slice(0, Math.max(1, limit))
+    .map((item) => item.clue);
+}
+
+function buildSystemPrompt(book, query = "") {
   const adventureBook = getAdventureBook(book);
+  const relevantClues = selectRelevantClues(adventureBook.clueHints, query, 2);
 
   return [
     "너는 초등학생을 위한 한국어 독서 모험 AI '한 권의 모험'이다.",
@@ -27,7 +45,7 @@ function buildSystemPrompt(book) {
     `원전 근거 메모: ${adventureBook.sourceNote}`,
     `주요 인물: ${adventureBook.characters.join(", ") || "학생이 선택한 책의 주요 인물"}`,
     `주요 장소: ${adventureBook.locations?.join(", ") || "학생이 선택한 책의 중요한 장소"}`,
-    `단서 방향: ${adventureBook.clueHints.join(" / ")}`
+    `관련도 상위 원문 근거 2개: ${relevantClues.join(" / ")}`
   ].join("\n");
 }
 
@@ -64,7 +82,7 @@ function buildTurnMessages(payload) {
   return [
     {
       role: "system",
-      content: buildSystemPrompt(payload.book)
+      content: buildSystemPrompt(payload.book, [payload.question, payload.rawQuestion, payload.place?.name, payload.character?.name].filter(Boolean).join(" "))
     },
     {
       role: "user",
@@ -207,6 +225,7 @@ function buildCharacterChatMessages(payload) {
   const character = payload.character || {};
   const rules = payload.characterRules || {};
   const boundaries = Array.isArray(rules.boundaries) ? rules.boundaries : [];
+  const relevantClues = selectRelevantClues(adventureBook.clueHints, [payload.message, character.name].filter(Boolean).join(" "), 2);
 
   return [
     {
@@ -214,6 +233,8 @@ function buildCharacterChatMessages(payload) {
       content: [
         "너는 초등학생 독서 활동 3에서 책 속 주요 인물로 대화하는 AI다.",
         "역할은 해설자가 아니라 학생이 고른 인물이다. 1인칭으로 답한다.",
+        `지금 대답하는 인물의 이름은 오직 '${character.name || "선택한 인물"}'이다. 다른 등장인물의 이름으로 자신을 소개하거나 다른 인물인 것처럼 말하지 않는다.`,
+        `답변의 첫 문장부터 마지막 문장까지 '${character.name || "선택한 인물"}'의 관점과 말투를 유지한다.`,
         "학생은 책 밖에서 질문하는 독자이며, 학생을 작품 속 인물로 끌어들이지 않는다.",
         "반드시 선택된 인물의 말투와 제약을 따른다.",
         "책에 없는 사건, 감정, 결말을 사실처럼 꾸며 말하지 않는다.",
@@ -229,7 +250,7 @@ function buildCharacterChatMessages(payload) {
         `인물 관점: ${rules.perspective || "자신이 직접 겪거나 느낄 수 있는 범위"}`,
         boundaries.length ? `인물 제약: ${boundaries.join(" / ")}` : "인물 제약: 결말을 먼저 말하지 않고 책 밖 해설자가 되지 않는다.",
         `원전 근거 메모: ${adventureBook.sourceNote}`,
-        `단서 방향: ${adventureBook.clueHints.join(" / ")}`
+        `관련도 상위 원문 근거 2개: ${relevantClues.join(" / ")}`
       ].join("\n")
     },
     {
@@ -240,6 +261,7 @@ function buildCharacterChatMessages(payload) {
         "",
         `학생이 인물에게 건넨 말: ${payload.message}`,
         "",
+        `반드시 ${character.name || "선택한 인물"} 본인으로 답해 줘.`,
         "선택된 인물의 목소리로만 답해 줘.",
         "답변 안에서 '나는 AI야', '작품 해설을 하자면' 같은 말은 쓰지 마.",
         "학생의 질문을 받아 주고, 인물의 말투로 장면과 마음을 짧게 보여 줘."
@@ -253,5 +275,6 @@ module.exports = {
   buildAnswerCheckMessages,
   buildCharacterChatMessages,
   buildTitleScenarioMessages,
-  buildTurnMessages
+  buildTurnMessages,
+  selectRelevantClues
 };

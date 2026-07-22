@@ -1,4 +1,5 @@
 const crypto = require("crypto");
+const { safeErrorMessage } = require("./telemetry");
 
 let cachedContainerPromise;
 
@@ -56,9 +57,10 @@ function normalizeLimit(value) {
   return Math.max(1, Math.min(1000, Math.round(limit)));
 }
 
-async function saveAdventureEvent(event, context) {
+async function saveAdventureEventDetailed(event, context) {
+  const startedAt = Date.now();
   const container = await getContainer();
-  if (!container) return false;
+  if (!container) return { saved: false, configured: false, durationMs: Date.now() - startedAt };
 
   const now = new Date().toISOString();
   const sessionId = event.sessionId || "anonymous";
@@ -80,11 +82,24 @@ async function saveAdventureEvent(event, context) {
 
   try {
     await container.items.create(item);
-    return true;
+    return { saved: true, configured: true, durationMs: Date.now() - startedAt };
   } catch (error) {
-    context?.log?.(`Cosmos DB save skipped: ${error.message}`);
-    return false;
+    return {
+      saved: false,
+      configured: true,
+      durationMs: Date.now() - startedAt,
+      errorCode: String(error?.code || "cosmos_save_failed").slice(0, 80),
+      errorMessage: safeErrorMessage(error)
+    };
   }
+}
+
+async function saveAdventureEvent(event, context) {
+  const result = await saveAdventureEventDetailed(event, context);
+  if (!result.saved && result.errorMessage) {
+    context?.log?.(`Cosmos DB save skipped: ${safeErrorMessage({ message: result.errorMessage })}`);
+  }
+  return result.saved;
 }
 
 async function listAdventureEvents(options = {}, context) {
@@ -114,10 +129,10 @@ async function listAdventureEvents(options = {}, context) {
       items: resources
     };
   } catch (error) {
-    context?.log?.(`Cosmos DB list skipped: ${error.message}`);
+    context?.log?.(`Cosmos DB list skipped: ${safeErrorMessage(error)}`);
     return {
       configured: true,
-      error: error.message,
+      error: safeErrorMessage(error),
       items: []
     };
   }
@@ -128,5 +143,6 @@ module.exports = {
   hasCosmosConfig,
   listAdventureEvents,
   normalizeStudent,
-  saveAdventureEvent
+  saveAdventureEvent,
+  saveAdventureEventDetailed
 };

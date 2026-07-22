@@ -1,21 +1,25 @@
 const { app } = require("@azure/functions");
 const { badRequest, json, readJson } = require("../shared/http");
-const { hasCosmosConfig, saveAdventureEvent } = require("../shared/store");
+const { hasCosmosConfig, saveAdventureEventDetailed } = require("../shared/store");
+const { createRequestId, logEvent } = require("../shared/telemetry");
 
-app.http("titleScenarioSubmission", {
+const titleScenarioSubmissionDefinition = {
   methods: ["POST"],
   authLevel: "anonymous",
   route: "adventure/title-scenario",
   handler: async (request, context) => {
+    const startedAt = Date.now();
+    const requestId = createRequestId(request, context);
+    const route = "/api/adventure/title-scenario";
     const payload = await readJson(request);
-    if (!payload) return badRequest("JSON body is required.");
-    if (!payload.book?.id) return badRequest("book.id is required.");
-    if (!payload.scenarioText) return badRequest("scenarioText is required.");
+    if (!payload) return badRequest("JSON body is required.", requestId);
+    if (!payload.book?.id) return badRequest("book.id is required.", requestId);
+    if (!payload.scenarioText) return badRequest("scenarioText is required.", requestId);
     if (!payload.nanoBananaPrompt && !payload.promptKo && !payload.promptEn) {
-      return badRequest("nanoBananaPrompt or prompt text is required.");
+      return badRequest("nanoBananaPrompt or prompt text is required.", requestId);
     }
 
-    const saved = await saveAdventureEvent({
+    const cosmosResult = await saveAdventureEventDetailed({
       type: "titleScenarioSubmission",
       activityId: "title-scenario",
       sessionId: payload.sessionId,
@@ -32,15 +36,29 @@ app.http("titleScenarioSubmission", {
       revisionCount: Number(payload.revisionCount || 0),
       clientTimestamp: payload.clientTimestamp || null
     }, context);
+    const saved = cosmosResult.saved;
+
+    logEvent(context, {
+      requestId, route, stage: saved ? "complete" : "cosmos-db",
+      status: saved ? "ok" : "error", errorCode: cosmosResult.errorCode || (cosmosResult.configured ? "cosmos_save_failed" : "cosmos_not_configured"),
+      errorMessage: cosmosResult.errorMessage, cosmosMs: cosmosResult.durationMs,
+      totalMs: Date.now() - startedAt
+    });
 
     return json(200, {
       ok: true,
       saved,
       storage: saved ? "cosmos-db" : hasCosmosConfig() ? "cosmos-db-error" : "not-configured",
-      database: process.env.COSMOS_DATABASE_NAME || "",
-      container: process.env.COSMOS_CONTAINER_NAME || "",
       itemType: "titleScenarioSubmission",
-      sessionId: payload.sessionId || null
-    });
+      sessionId: payload.sessionId || null,
+      requestId,
+      timings: { cosmosMs: cosmosResult.durationMs, totalMs: Date.now() - startedAt }
+    }, { "x-request-id": requestId });
   }
-});
+};
+
+app.http("titleScenarioSubmission", titleScenarioSubmissionDefinition);
+
+module.exports = {
+  titleScenarioSubmissionHandler: titleScenarioSubmissionDefinition.handler
+};

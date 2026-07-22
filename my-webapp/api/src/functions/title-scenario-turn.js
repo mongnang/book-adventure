@@ -1,8 +1,9 @@
 const { app } = require("@azure/functions");
 const { aiUnavailable, badRequest, json, readJson } = require("../shared/http");
-const { completeChat, isOpenAIConfigured } = require("../shared/openai");
+const { completeChatDetailed, isOpenAIConfigured } = require("../shared/openai");
 const { buildTitleScenarioMessages } = require("../shared/prompts");
-const { saveAdventureEvent } = require("../shared/store");
+const { saveAdventureEventDetailed } = require("../shared/store");
+const { createRequestId, logEvent, safeErrorMessage } = require("../shared/telemetry");
 
 function parseJsonObject(text) {
   try {
@@ -47,37 +48,50 @@ function normalizeTitleScenarioResult(result, payload) {
   };
 }
 
-app.http("titleScenarioTurn", {
+const titleScenarioTurnDefinition = {
   methods: ["POST"],
   authLevel: "anonymous",
   route: "adventure/title-scenario-turn",
   handler: async (request, context) => {
+    const startedAt = Date.now();
+    const requestId = createRequestId(request, context);
+    const route = "/api/adventure/title-scenario-turn";
     const payload = await readJson(request);
-    if (!payload) return badRequest("JSON body is required.");
-    if (!payload.book?.id) return badRequest("book.id is required.");
+    if (!payload) return badRequest("JSON body is required.", requestId);
+    if (!payload.book?.id) return badRequest("book.id is required.", requestId);
     if (!["draft", "revise", "prompt"].includes(payload.action)) {
-      return badRequest("action must be draft, revise, or prompt.");
+      return badRequest("action must be draft, revise, or prompt.", requestId);
     }
 
-    if (!isOpenAIConfigured()) return aiUnavailable();
+    if (!isOpenAIConfigured()) {
+      logEvent(context, { requestId, route, stage: "configuration", status: "error", errorCode: "azure_openai_not_configured", totalMs: Date.now() - startedAt });
+      return aiUnavailable(requestId, { error: "azure_openai_not_configured", stage: "configuration" });
+    }
 
     let result = null;
+    let openaiResult;
     try {
-      const text = await completeChat(buildTitleScenarioMessages(payload), {
+      openaiResult = await completeChatDetailed(buildTitleScenarioMessages(payload), {
         temperature: 0.55,
-        maxTokens: 1600,
-        reasoningEffort: "low",
+        maxTokens: 800,
+        reasoningEffort: "minimal",
         verbosity: "low",
         responseFormat: { type: "json_object" }
       });
-      result = normalizeTitleScenarioResult(parseJsonObject(text), payload);
+      result = normalizeTitleScenarioResult(parseJsonObject(openaiResult.text), payload);
       if (!result) throw new Error("Azure OpenAI returned an invalid title scenario result.");
     } catch (error) {
-      context.log(`Title scenario AI failed: ${error.message}`);
-      return aiUnavailable();
+      logEvent(context, {
+        requestId, route, stage: "azure-openai", status: "error",
+        httpStatus: error.status || 503,
+        errorCode: error.code || "azure_openai_invalid_response",
+        errorMessage: safeErrorMessage(error), openaiMs: error.durationMs,
+        openaiRequestId: error.requestId, totalMs: Date.now() - startedAt
+      });
+      return aiUnavailable(requestId, { error: error.code || "azure_openai_invalid_response", status: error.status >= 500 ? 502 : 503 });
     }
 
-    await saveAdventureEvent({
+    const cosmosResult = await saveAdventureEventDetailed({
       type: "titleScenarioTurn",
       activityId: "title-scenario",
       sessionId: payload.sessionId,
@@ -94,11 +108,30 @@ app.http("titleScenarioTurn", {
       mode: "azure-openai"
     }, context);
 
+    logEvent(context, {
+      requestId, route, stage: cosmosResult.saved ? "complete" : "cosmos-db",
+      status: cosmosResult.saved ? "ok" : "warning", errorCode: cosmosResult.errorCode,
+      errorMessage: cosmosResult.errorMessage, openaiMs: openaiResult.durationMs,
+      cosmosMs: cosmosResult.durationMs, totalMs: Date.now() - startedAt,
+      openaiRequestId: openaiResult.requestId
+    });
+
     return json(200, {
       ok: true,
       mode: "azure-openai",
       sessionId: payload.sessionId || null,
+      requestId,
+      saved: cosmosResult.saved,
+      timings: { openaiMs: openaiResult.durationMs, cosmosMs: cosmosResult.durationMs, totalMs: Date.now() - startedAt },
       ...result
-    });
+    }, { "x-request-id": requestId });
   }
-});
+};
+
+app.http("titleScenarioTurn", titleScenarioTurnDefinition);
+
+module.exports = {
+  normalizeTitleScenarioResult,
+  parseJsonObject,
+  titleScenarioTurnHandler: titleScenarioTurnDefinition.handler
+};

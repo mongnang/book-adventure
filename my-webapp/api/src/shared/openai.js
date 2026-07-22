@@ -72,6 +72,18 @@ function supportsTemperatureForDeployment(deployment) {
   return !/^gpt-5/i.test(deployment || "") && !/^o\d/i.test(deployment || "");
 }
 
+class OpenAIRequestError extends Error {
+  constructor(message, details = {}) {
+    super(message);
+    this.name = "OpenAIRequestError";
+    this.code = details.code || "azure_openai_error";
+    this.status = details.status || 0;
+    this.requestId = details.requestId || "";
+    this.durationMs = details.durationMs || 0;
+    this.safeMessage = details.safeMessage || message;
+  }
+}
+
 function supportsGpt5MiniOptions(deployment) {
   return /^gpt-5-mini(?:-|$)/i.test(deployment || "");
 }
@@ -139,15 +151,22 @@ function buildResponsesBody(config, messages, options) {
     body.temperature = options.temperature;
   }
 
+  const textOptions = {};
+  if (options.responseFormat?.type === "json_object") {
+    textOptions.format = { type: "json_object" };
+  }
+
   if (supportsGpt5MiniOptions(config.deployment)) {
     if (options.reasoningEffort) {
       body.reasoning = { effort: options.reasoningEffort };
     }
 
     if (options.verbosity) {
-      body.text = { verbosity: options.verbosity };
+      textOptions.verbosity = options.verbosity;
     }
   }
+
+  if (Object.keys(textOptions).length) body.text = textOptions;
 
   return body;
 }
@@ -167,10 +186,13 @@ function extractResponsesText(data) {
   return pieces.join("\n").trim();
 }
 
-async function completeChat(messages, options = {}) {
+async function completeChatDetailed(messages, options = {}) {
   const config = getOpenAIConfig();
   if (!config) {
-    throw new Error("Azure OpenAI is not configured.");
+    throw new OpenAIRequestError("Azure OpenAI is not configured.", {
+      code: "azure_openai_not_configured",
+      safeMessage: "Azure OpenAI is not configured."
+    });
   }
 
   const url = getCallUrl(config);
@@ -178,27 +200,106 @@ async function completeChat(messages, options = {}) {
     ? buildResponsesBody(config, messages, options)
     : buildChatCompletionsBody(config, messages, options);
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: buildHeaders(config),
-    body: JSON.stringify(body)
-  });
+  const startedAt = Date.now();
+  const controller = new AbortController();
+  const timeoutMs = Math.max(1000, Number(options.timeoutMs || process.env.AZURE_OPENAI_TIMEOUT_MS || 45000));
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  let response;
+
+  try {
+    response = await fetch(url, {
+      method: "POST",
+      headers: buildHeaders(config),
+      body: JSON.stringify(body),
+      signal: controller.signal
+    });
+  } catch (error) {
+    const durationMs = Date.now() - startedAt;
+    if (error?.name === "AbortError") {
+      throw new OpenAIRequestError("Azure OpenAI request timed out.", {
+        code: "azure_openai_timeout",
+        durationMs,
+        safeMessage: "Azure OpenAI request timed out."
+      });
+    }
+    throw new OpenAIRequestError("Azure OpenAI network request failed.", {
+      code: "azure_openai_network_error",
+      durationMs,
+      safeMessage: "Azure OpenAI network request failed."
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+
+  const durationMs = Date.now() - startedAt;
+  const requestId = response.headers.get("x-request-id") || response.headers.get("apim-request-id") || "";
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Azure OpenAI request failed: ${response.status} ${errorText.slice(0, 500)}`);
+    let providerCode = "azure_openai_http_error";
+    try {
+      providerCode = JSON.parse(errorText)?.error?.code || providerCode;
+    } catch (error) {
+      // The provider sometimes returns a plain-text gateway response.
+    }
+    throw new OpenAIRequestError(`Azure OpenAI request failed with status ${response.status}.`, {
+      code: String(providerCode).slice(0, 80),
+      status: response.status,
+      requestId,
+      durationMs,
+      safeMessage: `Azure OpenAI request failed with status ${response.status}.`
+    });
   }
 
-  const data = await response.json();
-  if (config.mode === "v1") {
-    return extractResponsesText(data);
+  let data;
+  try {
+    data = await response.json();
+  } catch (error) {
+    throw new OpenAIRequestError("Azure OpenAI returned invalid JSON.", {
+      code: "azure_openai_invalid_json",
+      status: response.status,
+      requestId,
+      durationMs,
+      safeMessage: "Azure OpenAI returned invalid JSON."
+    });
   }
 
-  return data.choices?.[0]?.message?.content || "";
+  const finishReason = data.choices?.[0]?.finish_reason || data.incomplete_details?.reason || "";
+  if (data.status === "incomplete" || finishReason === "length" || finishReason === "max_output_tokens") {
+    throw new OpenAIRequestError("Azure OpenAI output was truncated before completion.", {
+      code: "azure_openai_output_truncated",
+      status: response.status,
+      requestId: data.id || requestId,
+      durationMs,
+      safeMessage: "Azure OpenAI output was truncated before completion."
+    });
+  }
+
+  const text = config.mode === "v1"
+    ? extractResponsesText(data)
+    : data.choices?.[0]?.message?.content || "";
+
+  return {
+    text,
+    durationMs,
+    requestId: data.id || requestId,
+    mode: config.mode,
+    usage: data.usage || null
+  };
+}
+
+async function completeChat(messages, options = {}) {
+  const result = await completeChatDetailed(messages, options);
+  return result.text;
 }
 
 module.exports = {
+  OpenAIRequestError,
+  buildChatCompletionsBody,
+  buildResponsesBody,
   completeChat,
+  completeChatDetailed,
+  extractResponsesText,
   getOpenAIDiagnostics,
   isOpenAIConfigured
 };
