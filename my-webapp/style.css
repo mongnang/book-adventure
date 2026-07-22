@@ -3751,6 +3751,8 @@ body[data-active-screen="teacherDashboardScreen"] .screen-arrow-nav {
   }
 
   .character-chat-panel {
+    height: auto;
+    grid-template-rows: auto auto;
     overflow-y: auto;
   }
 
@@ -3762,6 +3764,14 @@ body[data-active-screen="teacherDashboardScreen"] .screen-arrow-nav {
   .character-chat-profile-grid {
     grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
     max-height: 210px;
+  }
+
+  .character-chat-grid {
+    grid-template-rows: auto auto;
+  }
+
+  .character-chat-selector {
+    min-height: 260px;
   }
 
   .character-chat-room {
