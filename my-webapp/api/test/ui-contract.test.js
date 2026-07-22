@@ -62,6 +62,7 @@ test("title and activity layouts keep the requested responsive scroll contracts"
   assert.match(css, /\.character-chat-log\s*\{[^}]*overflow-y:\s*auto/s);
   assert.match(css, /scrollbar-color:\s*#d9af62 #26140c/);
   assert.match(css, /\.character-chat-selector\s*\{\s*min-height:\s*260px/s);
+  assert.match(css, /\.character-chat-room\s*\{\s*height:\s*min\(460px, calc\(var\(--app-height\) - 116px\)\)/s);
   assert.match(html, /id="characterChatProfileGrid" tabindex="0"/);
   assert.match(html, /id="characterChatLog" tabindex="0"/);
 });

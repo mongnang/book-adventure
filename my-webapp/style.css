@@ -3775,7 +3775,8 @@ body[data-active-screen="teacherDashboardScreen"] .screen-arrow-nav {
   }
 
   .character-chat-room {
-    min-height: min(460px, calc(var(--app-height) - 116px));
+    height: min(460px, calc(var(--app-height) - 116px));
+    min-height: 0;
   }
 
   .character-chat-form {
