@@ -3,7 +3,7 @@ const { json } = require("../shared/http");
 const { getOpenAIDiagnostics, isOpenAIConfigured } = require("../shared/openai");
 const { hasCosmosConfig } = require("../shared/store");
 
-const BUILD_VERSION = "2026-07-22-api-prompts-4";
+const BUILD_VERSION = "2026-07-22-api-prompts-5";
 
 function getCosmosDiagnostics() {
   let endpointHost = "";

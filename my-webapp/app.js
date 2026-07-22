@@ -2389,8 +2389,7 @@ function renderCharacterChatLog() {
   });
 
   if (shouldStickToBottom) {
-    const behavior = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
-    characterChatLog.scrollTo({ top: characterChatLog.scrollHeight, behavior });
+    characterChatLog.scrollTop = characterChatLog.scrollHeight;
   } else {
     characterChatLog.scrollTop = previousScrollTop;
   }
