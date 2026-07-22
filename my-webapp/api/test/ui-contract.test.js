@@ -57,7 +57,9 @@ test("teacher image-prompt view supports filtering, selection, copy, and UTF-8 T
 test("title and activity layouts keep the requested responsive scroll contracts", () => {
   assert.match(html, /<h1><span>한 권으로의<\/span> <span>모험<\/span><\/h1>/);
   assert.match(css, /\.hero-copy h1 span\s*\{[^}]*white-space:\s*nowrap/s);
-  assert.match(css, /\.dialogue-box\s*\{[^}]*right:\s*calc\(var\(--hud-width\) \+ 16px\)/s);
+  assert.match(css, /--adventure-stage-gutter:\s*max\(0px, calc\(\(var\(--app-width\) - 1480px\) \/ 2\)\)/);
+  assert.match(css, /\.dialogue-box\s*\{[^}]*left:\s*calc\(var\(--dialogue-screen-edge\) - var\(--adventure-stage-gutter\) - var\(--adventure-pad-x\)\)/s);
+  assert.match(css, /\.dialogue-box\s*\{[^}]*right:\s*calc\(var\(--hud-width\) \+ var\(--hud-screen-edge\) \+ var\(--dialogue-hud-gap\) - var\(--adventure-stage-gutter\) - var\(--adventure-pad-x\)\)/s);
   assert.match(css, /\.character-chat-profile-grid\s*\{[^}]*overflow-y:\s*auto/s);
   assert.match(css, /\.character-chat-log\s*\{[^}]*overflow-y:\s*auto/s);
   assert.match(css, /scrollbar-color:\s*#d9af62 #26140c/);
