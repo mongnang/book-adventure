@@ -25,7 +25,7 @@ test("Responses API body uses the Azure/OpenAI GPT-5 options", () => {
 
   assert.equal(body.max_output_tokens, 800);
   assert.deepEqual(body.reasoning, { effort: "minimal" });
-  assert.deepEqual(body.text, { format: { type: "json_object" }, verbosity: "low" });
+  assert.deepEqual(body.text, { verbosity: "low" });
   assert.match(body.instructions, /JSON object/);
 });
 

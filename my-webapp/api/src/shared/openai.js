@@ -152,10 +152,8 @@ function buildResponsesBody(config, messages, options) {
   }
 
   const textOptions = {};
-  if (options.responseFormat?.type === "json_object") {
-    textOptions.format = { type: "json_object" };
-  }
-
+  // This Azure gpt-5-mini deployment rejects text.format with the Responses API.
+  // JSON-only output is enforced by the instructions above and validated by each handler.
   if (supportsGpt5MiniOptions(config.deployment)) {
     if (options.reasoningEffort) {
       body.reasoning = { effort: options.reasoningEffort };
