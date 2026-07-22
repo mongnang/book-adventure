@@ -2403,6 +2403,11 @@ function renderCharacterChatActivity() {
   characterChatIntro.textContent = `「${selectedBook.title}」의 주요 인물 중 한 명을 골라 직접 대화해 보세요.`;
   renderCharacterChatProfiles();
   renderCharacterChatLog();
+  updateCharacterChatControls();
+}
+
+function updateCharacterChatControls() {
+  if (!characterChatActivity) return;
   characterChatInput.disabled = !characterChatActivity.selectedCharacter || characterChatActivity.busy;
   characterChatSubmitButton.disabled = !characterChatActivity.selectedCharacter || characterChatActivity.busy;
   characterChatSubmitButton.textContent = characterChatActivity.busy ? "듣는 중" : "말 걸기";
@@ -2451,7 +2456,7 @@ async function submitCharacterChatMessage(text) {
   appendCharacterChatMessage("student", message, character);
   characterChatInput.value = "";
   characterChatActivity.busy = true;
-  renderCharacterChatActivity();
+  updateCharacterChatControls();
 
   const payload = {
     activityId: "character-chat",
@@ -2477,7 +2482,7 @@ async function submitCharacterChatMessage(text) {
     appendCharacterChatMessage("character", formatApiError(error, "인물의 답변 만들기"), character);
   } finally {
     characterChatActivity.busy = false;
-    renderCharacterChatActivity();
+    updateCharacterChatControls();
     characterChatInput.focus();
   }
 }
