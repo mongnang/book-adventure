@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>한 권으로의 모험</title>
-    <link rel="stylesheet" href="./style.css?v=20260710-score-trend-report-1">
+    <link rel="stylesheet" href="./style.css?v=20260722-api-prompts-1">
   </head>
   <body>
     <main class="app-shell">
@@ -35,7 +35,7 @@
 
         <div class="hero-copy">
           <p class="kicker">AI 독서 모험 챗봇</p>
-          <h1>한 권으로의 모험</h1>
+          <h1><span>한 권으로의</span> <span>모험</span></h1>
           <p class="hero-subtitle">
             책장 사이로 들어가 한 권을 고르고, 이야기 속 질문과 단서를 따라가 보세요.
           </p>
@@ -99,7 +99,7 @@
               <p id="selectedDescription">
                 달빛 아래 길 위에서 이어지는 만남과 기억을 따라가는 한국 단편소설입니다.
               </p>
-              <button class="start-button" id="startButton" type="button">이 책으로 활동 고르기</button>
+              <button class="start-button" id="startButton" type="button" disabled>이 책으로 활동 고르기</button>
             </div>
           </div>
         </aside>
@@ -110,6 +110,11 @@
             <h2>책등을 눌러 책을 고르세요</h2>
             <p>오른쪽 또는 왼쪽으로 드래그하면 책장이 부드럽게 움직입니다.</p>
           </header>
+
+          <div class="book-load-status" id="bookLoadStatus" role="status" aria-live="polite">
+            <span>책 목록을 불러오는 중입니다.</span>
+            <button class="is-hidden" id="retryBooksButton" type="button">책 목록 다시 불러오기</button>
+          </div>
 
           <div class="shelf-window" id="shelfWindow">
             <div class="shelf-row" id="shelfRow" aria-label="선택 가능한 책 목록"></div>
@@ -203,21 +208,44 @@
             학생 기록을 기다리고 있습니다.
           </p>
 
-          <div class="teacher-summary-strip" id="teacherSummaryStrip" aria-label="결과 요약"></div>
-
-          <div class="teacher-dashboard-grid">
-            <aside class="teacher-student-panel">
-              <div class="teacher-student-panel-header">
-                <h3>학생 목록</h3>
-                <input id="teacherStudentSearchInput" type="search" placeholder="반 또는 번호 검색">
-              </div>
-              <div class="teacher-student-list" id="teacherStudentList"></div>
-            </aside>
-
-            <section class="teacher-student-detail" id="teacherStudentDetail" aria-live="polite">
-              <p class="teacher-empty-state">왼쪽에서 학생을 선택하면 활동 기록이 시간순으로 보입니다.</p>
-            </section>
+          <div class="teacher-view-tabs" role="tablist" aria-label="교사 결과 보기">
+            <button class="is-selected" id="teacherStudentViewTab" type="button" role="tab" aria-selected="true" aria-controls="teacherStudentView">학생별 활동 결과</button>
+            <button id="teacherPromptViewTab" type="button" role="tab" aria-selected="false" aria-controls="teacherPromptView">이미지 생성 프롬프트</button>
           </div>
+
+          <section class="teacher-student-view" id="teacherStudentView" role="tabpanel" aria-labelledby="teacherStudentViewTab">
+            <div class="teacher-summary-strip" id="teacherSummaryStrip" aria-label="결과 요약"></div>
+
+            <div class="teacher-dashboard-grid">
+              <aside class="teacher-student-panel">
+                <div class="teacher-student-panel-header">
+                  <h3>학생 목록</h3>
+                  <input id="teacherStudentSearchInput" type="search" placeholder="반 또는 번호 검색">
+                </div>
+                <div class="teacher-student-list" id="teacherStudentList"></div>
+              </aside>
+
+              <section class="teacher-student-detail" id="teacherStudentDetail" aria-live="polite">
+                <p class="teacher-empty-state">왼쪽에서 학생을 선택하면 활동 기록이 시간순으로 보입니다.</p>
+              </section>
+            </div>
+          </section>
+
+          <section class="teacher-prompt-view is-hidden" id="teacherPromptView" role="tabpanel" aria-labelledby="teacherPromptViewTab">
+            <div class="teacher-prompt-toolbar">
+              <label>
+                <span>제출 날짜</span>
+                <input id="teacherPromptDateFilter" type="date">
+              </label>
+              <button id="teacherPromptClearDateButton" type="button">전체 날짜</button>
+              <button id="teacherPromptSelectAllButton" type="button">현재 목록 전체 선택</button>
+              <button id="teacherPromptClearSelectionButton" type="button">선택 해제</button>
+              <button id="teacherPromptCopyButton" type="button">선택 프롬프트 복사</button>
+              <button id="teacherPromptExportButton" type="button">선택 프롬프트 TXT</button>
+            </div>
+            <p class="teacher-prompt-selection-status" id="teacherPromptSelectionStatus" aria-live="polite">선택한 프롬프트가 없습니다.</p>
+            <div class="teacher-prompt-list" id="teacherPromptList"></div>
+          </section>
         </div>
       </section>
 
@@ -324,11 +352,11 @@
           <div class="character-chat-grid">
             <aside class="character-chat-selector">
               <h3>대화할 인물</h3>
-              <div class="character-chat-profile-grid" id="characterChatProfileGrid"></div>
+              <div class="character-chat-profile-grid" id="characterChatProfileGrid" tabindex="0" aria-label="대화할 인물 목록"></div>
             </aside>
 
             <section class="character-chat-room">
-              <div class="character-chat-log" id="characterChatLog" aria-live="polite"></div>
+              <div class="character-chat-log" id="characterChatLog" tabindex="0" aria-label="인물과 나눈 대화" aria-live="polite"></div>
               <form class="character-chat-form" id="characterChatForm">
                 <input id="characterChatInput" type="text" autocomplete="off" maxlength="360" placeholder="인물에게 묻고 싶은 말을 써 보세요.">
                 <button id="characterChatSubmitButton" type="submit">말 걸기</button>
@@ -347,6 +375,6 @@
     </main>
 
     <script src="./agent-client.js?v=20260710-score-trend-report-1"></script>
-    <script src="./app.js?v=20260710-score-trend-report-1"></script>
+    <script src="./app.js?v=20260722-api-prompts-1"></script>
   </body>
 </html>

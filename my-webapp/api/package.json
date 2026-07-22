@@ -6,7 +6,7 @@
   "main": "src/functions/*.js",
   "scripts": {
     "start": "func start",
-    "test": "node --test test/shared.test.js test/functions.test.js test/client-errors.test.js"
+    "test": "node --test test/shared.test.js test/functions.test.js test/client-errors.test.js test/ui-contract.test.js"
   },
   "engines": {
     "node": "20.x"

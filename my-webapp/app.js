@@ -1,265 +1,24 @@
-const fallbackBooks = [
-  {
-    "id": "memil",
-    "title": "메밀꽃 필 무렵",
-    "author": "이효석",
-    "description": "달빛 아래 길 위에서 이어지는 만남과 기억을 따라가는 한국 단편소설입니다.",
-    "cover": "./assets/covers/memil.png",
-    "coverA": "#7b3225",
-    "coverB": "#24100c",
-    "spineWidth": 76,
-    "spineHeight": 370
-  },
-  {
-    "id": "sonagi",
-    "title": "소나기",
-    "author": "황순원",
-    "description": "짧은 만남과 맑은 감정을 통해 성장과 기억을 생각하게 하는 이야기입니다.",
-    "cover": "./assets/covers/sonagi.jpg",
-    "coverA": "#31546b",
-    "coverB": "#10212d",
-    "spineWidth": 70,
-    "spineHeight": 340
-  },
-  {
-    "id": "unlucky-day",
-    "title": "운수 좋은 날",
-    "author": "현진건",
-    "description": "하루의 아이러니를 통해 삶의 무게와 시대의 현실을 보여 주는 작품입니다.",
-    "cover": "./assets/covers/unlucky-day.jpg",
-    "coverA": "#6d3d1e",
-    "coverB": "#211207",
-    "spineWidth": 72,
-    "spineHeight": 355
-  },
-  {
-    "id": "wings",
-    "title": "날개",
-    "author": "이상",
-    "description": "인물의 내면과 낯선 감각을 따라가며 관점 읽기를 연습하기 좋은 작품입니다.",
-    "cover": "./assets/covers/wings.jpg",
-    "coverA": "#5c5b63",
-    "coverB": "#17171b",
-    "spineWidth": 64,
-    "spineHeight": 326
-  },
-  {
-    "id": "spring",
-    "title": "봄봄",
-    "author": "김유정",
-    "description": "인물 사이의 말과 행동을 살피며 해학과 갈등을 읽을 수 있는 작품입니다.",
-    "cover": "./assets/covers/spring.jpg",
-    "coverA": "#7a5124",
-    "coverB": "#241709",
-    "spineWidth": 68,
-    "spineHeight": 345
-  },
-  {
-    "id": "young-prince",
-    "title": "어린 왕자",
-    "author": "생텍쥐페리",
-    "description": "질문과 만남을 통해 관계, 책임, 상상력을 생각하게 하는 이야기입니다.",
-    "cover": "./assets/covers/young-prince.jpg",
-    "coverA": "#253f73",
-    "coverB": "#09152f",
-    "spineWidth": 78,
-    "spineHeight": 382
-  },
-  {
-    "id": "honggildong",
-    "title": "홍길동전",
-    "author": "허균",
-    "description": "부당한 세상에 맞서는 인물을 통해 정의와 사회를 생각해 볼 수 있습니다.",
-    "cover": "./assets/covers/honggildong.jpg",
-    "coverA": "#793b31",
-    "coverB": "#1e0c09",
-    "spineWidth": 74,
-    "spineHeight": 362
-  },
-  {
-    "id": "heungbu",
-    "title": "흥부전",
-    "author": "작자 미상",
-    "description": "형제의 갈등과 선택을 통해 욕심, 나눔, 보상을 생각해 볼 수 있는 고전소설입니다.",
-    "cover": "./assets/covers/heungbu.jpg",
-    "coverA": "#5f3a20",
-    "coverB": "#20110a",
-    "spineWidth": 71,
-    "spineHeight": 351
-  },
-  {
-    "id": "simcheong",
-    "title": "심청전",
-    "author": "작자 미상",
-    "description": "효와 희생, 선택의 의미를 인물의 마음으로 읽어 볼 수 있는 고전소설입니다.",
-    "cover": "./assets/covers/simcheong.jpg",
-    "coverA": "#1f5b5b",
-    "coverB": "#0b2425",
-    "spineWidth": 73,
-    "spineHeight": 366
-  },
-  {
-    "id": "chunhyang",
-    "title": "춘향전",
-    "author": "작자 미상",
-    "description": "사랑, 약속, 권력에 맞서는 태도를 중심으로 읽을 수 있는 고전소설입니다.",
-    "cover": "./assets/covers/chunhyang.jpg",
-    "coverA": "#7b263f",
-    "coverB": "#240915",
-    "spineWidth": 77,
-    "spineHeight": 374
-  },
-  {
-    "id": "heosaeng",
-    "title": "허생전",
-    "author": "박지원",
-    "description": "인물의 행동을 통해 사회 현실과 비판적 사고를 함께 살펴볼 수 있는 작품입니다.",
-    "cover": "./assets/covers/heosaeng.jpg",
-    "coverA": "#41492a",
-    "coverB": "#121609",
-    "spineWidth": 66,
-    "spineHeight": 333
-  },
-  {
-    "id": "sangnoksu",
-    "title": "상록수",
-    "author": "심훈",
-    "description": "농촌 계몽과 청년들의 의지를 따라가며 시대와 삶의 목표를 생각하는 장편소설입니다.",
-    "cover": "./assets/covers/sangnoksu.jpg",
-    "coverA": "#2f5b31",
-    "coverB": "#0c1c0e",
-    "spineWidth": 80,
-    "spineHeight": 392
-  },
-  {
-    "id": "munjangganghwa",
-    "title": "문장강화",
-    "author": "이태준",
-    "description": "표현과 문장을 살피는 참고용 책으로, 독서 후 글쓰기 활동과 연결하기 좋습니다.",
-    "cover": "./assets/covers/munjangganghwa.jpg",
-    "coverA": "#4b3d63",
-    "coverB": "#181224",
-    "spineWidth": 69,
-    "spineHeight": 350
-  },
-  {
-    "id": "nami-janggun",
-    "title": "남이 장군",
-    "author": "작자 미상",
-    "description": "인물의 용기와 비극을 통해 역사 속 이야기의 긴장감을 느낄 수 있습니다.",
-    "cover": "./assets/covers/nami-janggun.jpg",
-    "coverA": "#6b2020",
-    "coverB": "#190707",
-    "spineWidth": 67,
-    "spineHeight": 331
-  },
-  {
-    "id": "mujong",
-    "title": "무정",
-    "author": "이광수",
-    "description": "인물 관계와 시대 변화를 중심으로 근대소설의 특징을 살펴볼 수 있습니다.",
-    "cover": "./assets/covers/mujong.jpg",
-    "coverA": "#634329",
-    "coverB": "#1c1209",
-    "spineWidth": 82,
-    "spineHeight": 398
-  },
-  {
-    "id": "old-man-sea",
-    "title": "노인과 바다",
-    "author": "어니스트 헤밍웨이",
-    "description": "한 인물의 도전과 버팀을 따라가며 용기와 존엄을 생각하게 하는 소설입니다.",
-    "cover": "./assets/covers/old-man-sea.jpg",
-    "coverA": "#1d4f78",
-    "coverB": "#071827",
-    "spineWidth": 75,
-    "spineHeight": 360
-  },
-  {
-    "id": "alice",
-    "title": "이상한 나라의 앨리스",
-    "author": "루이스 캐럴",
-    "description": "낯선 세계와 말놀이를 따라가며 상상력과 질문하는 힘을 키울 수 있는 이야기입니다.",
-    "cover": "./assets/covers/alice.jpg",
-    "coverA": "#7b4b78",
-    "coverB": "#241024",
-    "spineWidth": 81,
-    "spineHeight": 386
-  },
-  {
-    "id": "wizard-oz",
-    "title": "오즈의 마법사",
-    "author": "라이먼 프랭크 바움",
-    "description": "동료와 함께 떠나는 여정을 통해 용기, 지혜, 마음의 의미를 생각하게 합니다.",
-    "cover": "./assets/covers/wizard-oz.jpg",
-    "coverA": "#245f45",
-    "coverB": "#091d13",
-    "spineWidth": 79,
-    "spineHeight": 381
-  },
-  {
-    "id": "anne",
-    "title": "빨간 머리 앤",
-    "author": "루시 모드 몽고메리",
-    "description": "상상력이 풍부한 인물의 성장과 관계 맺기를 따라가는 따뜻한 이야기입니다.",
-    "cover": "./assets/covers/anne.jpg",
-    "coverA": "#8a3527",
-    "coverB": "#2c0e0a",
-    "spineWidth": 78,
-    "spineHeight": 376
-  },
-  {
-    "id": "treasure-island",
-    "title": "보물섬",
-    "author": "로버트 루이스 스티븐슨",
-    "description": "모험과 선택의 순간을 따라가며 인물의 판단과 변화를 읽을 수 있습니다.",
-    "cover": "./assets/covers/treasure-island.jpg",
-    "coverA": "#5f5221",
-    "coverB": "#191608",
-    "spineWidth": 83,
-    "spineHeight": 402
-  },
-  {
-    "id": "little-women",
-    "title": "작은 아씨들",
-    "author": "루이자 메이 올컷",
-    "description": "가족과 자매들의 성장 이야기를 통해 꿈, 책임, 관계를 생각해 볼 수 있습니다.",
-    "cover": "./assets/covers/little-women.jpg",
-    "coverA": "#6f324f",
-    "coverB": "#210d17",
-    "spineWidth": 84,
-    "spineHeight": 405
-  },
-  {
-    "id": "pinocchio",
-    "title": "피노키오",
-    "author": "카를로 콜로디",
-    "description": "거짓말과 성장, 선택의 결과를 인물의 모험 속에서 읽을 수 있는 이야기입니다.",
-    "cover": "./assets/covers/pinocchio.jpg",
-    "coverA": "#8a5a24",
-    "coverB": "#2a1808",
-    "spineWidth": 70,
-    "spineHeight": 342
-  },
-  {
-    "id": "momo",
-    "title": "모모",
-    "author": "미하엘 엔데",
-    "description": "시간과 삶의 속도를 생각하며 인물의 귀 기울임과 용기를 따라가는 이야기입니다.",
-    "cover": "./assets/covers/momo.jpg",
-    "coverA": "#30515e",
-    "coverB": "#0d1b20",
-    "spineWidth": 68,
-    "spineHeight": 337
-  }
-];
-let books = [...fallbackBooks];
+const BOOK_DISPLAY_DEFAULTS = {
+  cover: "",
+  coverA: "#6e2c20",
+  coverB: "#2d1510",
+  spineWidth: 72,
+  spineHeight: 350
+};
+let books = [];
 
 const STUDENT_PROFILE_KEY = "book-adventure-student-profile";
 const CONVERSATION_LOG_KEY = "book-adventure-conversation-log";
 const TITLE_SCENARIO_SUBMISSIONS_KEY = "book-adventure-title-scenario-submissions";
 const GUIDE_CHARACTER_IMAGE = "./assets/characters/rabbit-librarian.png";
 const AI_UNAVAILABLE_MESSAGE = "AI와 연결이 불안정합니다. 다시 시도해보세요.";
+
+function formatApiError(error, action = "요청") {
+  if (typeof window.formatBookAdventureApiError === "function") {
+    return window.formatBookAdventureApiError(error, action);
+  }
+  return `${action} 중 문제가 생겼어요. 잠시 후 다시 시도해 주세요.`;
+}
 
 const heroScreen = document.querySelector("#heroScreen");
 const profileScreen = document.querySelector("#profileScreen");
@@ -291,6 +50,8 @@ const selectedDescription = document.querySelector("#selectedDescription");
 const coverTitle = document.querySelector("#coverTitle");
 const coverAuthor = document.querySelector("#coverAuthor");
 const startButton = document.querySelector("#startButton");
+const bookLoadStatus = document.querySelector("#bookLoadStatus");
+const retryBooksButton = document.querySelector("#retryBooksButton");
 const startScenarioButton = document.querySelector("#startScenarioButton");
 const startAdventureActivityButton = document.querySelector("#startAdventureActivityButton");
 const startCharacterChatButton = document.querySelector("#startCharacterChatButton");
@@ -308,6 +69,18 @@ const teacherSummaryStrip = document.querySelector("#teacherSummaryStrip");
 const teacherStudentSearchInput = document.querySelector("#teacherStudentSearchInput");
 const teacherStudentList = document.querySelector("#teacherStudentList");
 const teacherStudentDetail = document.querySelector("#teacherStudentDetail");
+const teacherStudentViewTab = document.querySelector("#teacherStudentViewTab");
+const teacherPromptViewTab = document.querySelector("#teacherPromptViewTab");
+const teacherStudentView = document.querySelector("#teacherStudentView");
+const teacherPromptView = document.querySelector("#teacherPromptView");
+const teacherPromptDateFilter = document.querySelector("#teacherPromptDateFilter");
+const teacherPromptClearDateButton = document.querySelector("#teacherPromptClearDateButton");
+const teacherPromptSelectAllButton = document.querySelector("#teacherPromptSelectAllButton");
+const teacherPromptClearSelectionButton = document.querySelector("#teacherPromptClearSelectionButton");
+const teacherPromptCopyButton = document.querySelector("#teacherPromptCopyButton");
+const teacherPromptExportButton = document.querySelector("#teacherPromptExportButton");
+const teacherPromptSelectionStatus = document.querySelector("#teacherPromptSelectionStatus");
+const teacherPromptList = document.querySelector("#teacherPromptList");
 const scenarioBookTitle = document.querySelector("#scenarioBookTitle");
 const scenarioChatLog = document.querySelector("#scenarioChatLog");
 const scenarioChoicePanel = document.querySelector("#scenarioChoicePanel");
@@ -609,7 +382,10 @@ const teacherState = {
   accessCode: "",
   students: [],
   selectedStudentKey: "",
-  selectedActivityTab: ""
+  selectedActivityTab: "",
+  activeView: "students",
+  promptDate: "",
+  selectedPromptIds: new Set()
 };
 
 function readJsonStorage(key, fallback) {
@@ -1763,14 +1539,167 @@ function renderTeacherStudentDetail() {
   }
 }
 
+function teacherDateKey(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value || "").slice(0, 10);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function getTeacherPromptItems() {
+  return teacherState.students.flatMap((student) => student.records
+    .filter((record) => record.type === "titleScenarioSubmission" && (record.promptKo || record.promptEn))
+    .map((record) => ({
+      id: record.id,
+      createdAt: record.createdAt,
+      dateKey: teacherDateKey(record.createdAt),
+      student: `${student.className || "-"}반 ${student.number || "-"}번${record.nickname || student.nickname ? ` · ${record.nickname || student.nickname}` : ""}`,
+      bookTitle: record.bookTitle || "책 제목 없음",
+      promptKo: record.promptKo || "",
+      promptEn: record.promptEn || ""
+    })))
+    .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+}
+
+function getVisibleTeacherPromptItems() {
+  const items = getTeacherPromptItems();
+  return teacherState.promptDate ? items.filter((item) => item.dateKey === teacherState.promptDate) : items;
+}
+
+function buildTeacherPromptText(items) {
+  return items.map((item) => [
+    `제출 일시: ${teacherShortDate(item.createdAt)}`,
+    `학생: ${item.student}`,
+    `책: ${item.bookTitle}`,
+    "이미지 생성 프롬프트:",
+    item.promptKo ? `[한국어]\n${item.promptKo}` : "",
+    item.promptEn ? `[English]\n${item.promptEn}` : ""
+  ].filter(Boolean).join("\n")).join("\n\n------------------------------\n\n");
+}
+
+function getSelectedTeacherPromptItems() {
+  return getTeacherPromptItems().filter((item) => teacherState.selectedPromptIds.has(item.id));
+}
+
+function renderTeacherPromptView() {
+  const items = getVisibleTeacherPromptItems();
+  teacherPromptList.innerHTML = "";
+
+  if (!items.length) {
+    const empty = document.createElement("p");
+    empty.className = "teacher-empty-state";
+    empty.textContent = teacherState.promptDate ? "선택한 날짜에 제출된 이미지 생성 프롬프트가 없습니다." : "아직 제출된 이미지 생성 프롬프트가 없습니다.";
+    teacherPromptList.appendChild(empty);
+  } else {
+    const groups = new Map();
+    items.forEach((item) => {
+      if (!groups.has(item.dateKey)) groups.set(item.dateKey, []);
+      groups.get(item.dateKey).push(item);
+    });
+
+    groups.forEach((groupItems, dateKey) => {
+      const group = document.createElement("section");
+      group.className = "teacher-prompt-date-group";
+      const heading = document.createElement("h3");
+      heading.textContent = `${dateKey} · ${groupItems.length}건`;
+      group.appendChild(heading);
+
+      groupItems.forEach((item) => {
+        const card = document.createElement("article");
+        card.className = "teacher-prompt-card";
+        const label = document.createElement("label");
+        label.className = "teacher-prompt-check";
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = teacherState.selectedPromptIds.has(item.id);
+        checkbox.dataset.promptId = item.id;
+        const title = document.createElement("strong");
+        title.textContent = `${item.student} · ${item.bookTitle}`;
+        label.append(checkbox, title);
+
+        const time = document.createElement("time");
+        time.dateTime = item.createdAt;
+        time.textContent = teacherShortDate(item.createdAt);
+        const prompt = document.createElement("pre");
+        prompt.textContent = [
+          item.promptKo ? `[한국어]\n${item.promptKo}` : "",
+          item.promptEn ? `[English]\n${item.promptEn}` : ""
+        ].filter(Boolean).join("\n\n");
+        card.append(label, time, prompt);
+        group.appendChild(card);
+      });
+      teacherPromptList.appendChild(group);
+    });
+  }
+
+  const selectedCount = getSelectedTeacherPromptItems().length;
+  teacherPromptSelectionStatus.textContent = selectedCount ? `${selectedCount}개 프롬프트를 선택했습니다.` : "선택한 프롬프트가 없습니다.";
+  teacherPromptCopyButton.disabled = selectedCount === 0;
+  teacherPromptExportButton.disabled = selectedCount === 0;
+  teacherPromptClearSelectionButton.disabled = selectedCount === 0;
+  teacherPromptSelectAllButton.disabled = items.length === 0;
+}
+
+function setTeacherView(view) {
+  teacherState.activeView = view === "prompts" ? "prompts" : "students";
+  const promptActive = teacherState.activeView === "prompts";
+  teacherStudentView.classList.toggle("is-hidden", promptActive);
+  teacherPromptView.classList.toggle("is-hidden", !promptActive);
+  teacherStudentViewTab.classList.toggle("is-selected", !promptActive);
+  teacherPromptViewTab.classList.toggle("is-selected", promptActive);
+  teacherStudentViewTab.setAttribute("aria-selected", String(!promptActive));
+  teacherPromptViewTab.setAttribute("aria-selected", String(promptActive));
+  if (promptActive) renderTeacherPromptView();
+}
+
+async function copySelectedTeacherPrompts() {
+  const text = buildTeacherPromptText(getSelectedTeacherPromptItems());
+  if (!text) return;
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch (error) {
+    const field = document.createElement("textarea");
+    field.value = text;
+    field.setAttribute("readonly", "");
+    field.style.position = "fixed";
+    field.style.opacity = "0";
+    document.body.appendChild(field);
+    field.select();
+    document.execCommand("copy");
+    field.remove();
+  }
+  teacherPromptSelectionStatus.textContent = `${getSelectedTeacherPromptItems().length}개 프롬프트를 클립보드에 복사했습니다.`;
+}
+
+function exportSelectedTeacherPrompts() {
+  const items = getSelectedTeacherPromptItems();
+  const text = buildTeacherPromptText(items);
+  if (!text) return;
+  const blob = new Blob(["\uFEFF", text], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `book-adventure-image-prompts-${teacherDateKey(new Date())}.txt`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1200);
+  teacherPromptSelectionStatus.textContent = `${items.length}개 프롬프트를 UTF-8 TXT로 내보냈습니다.`;
+}
+
 function renderTeacherDashboard() {
   renderTeacherSummary();
   renderTeacherStudentList();
   renderTeacherStudentDetail();
+  setTeacherView(teacherState.activeView);
 }
 
 function setTeacherStudents(input, message) {
   teacherState.students = prepareTeacherStudents(input);
+  const promptIds = new Set(getTeacherPromptItems().map((item) => item.id));
+  teacherState.selectedPromptIds = new Set(Array.from(teacherState.selectedPromptIds).filter((id) => promptIds.has(id)));
   teacherState.selectedStudentKey = teacherState.students[0]?.studentKey || "";
   teacherState.selectedActivityTab = teacherState.students[0] ? getPreferredTeacherActivityTab(teacherState.students[0]) : "";
   renderTeacherDashboard();
@@ -2015,7 +1944,7 @@ async function createTitleScenarioDraft() {
     appendTitleScenarioMessage("guide", "이 이야기를 어떻게 바꿔볼까? 아래 보기에서 고르거나, 직접 바꾸고 싶은 점을 써 줘.");
   } catch (error) {
     titleScenarioActivity.stage = "event";
-    appendTitleScenarioMessage("guide", AI_UNAVAILABLE_MESSAGE);
+    appendTitleScenarioMessage("guide", formatApiError(error, "가상 시나리오 만들기"));
   } finally {
     titleScenarioActivity.busy = false;
     renderTitleScenarioActivity();
@@ -2088,7 +2017,7 @@ async function reviseTitleScenario(revisionId, customRequest = "") {
     appendTitleScenarioMessage("guide", titleScenarioActivity.scenario);
     appendTitleScenarioMessage("guide", "마음에 들면 확정하고, 더 바꾸고 싶으면 다시 골라 줘.");
   } catch (error) {
-    appendTitleScenarioMessage("guide", AI_UNAVAILABLE_MESSAGE);
+    appendTitleScenarioMessage("guide", formatApiError(error, "시나리오 고치기"));
   } finally {
     titleScenarioActivity.busy = false;
     renderTitleScenarioActivity();
@@ -2126,10 +2055,11 @@ async function createNanoBananaPromptWithAI() {
     if (result?.guideText) {
       appendTitleScenarioMessage("guide", result.guideText);
     }
-
+    return true;
   } catch (error) {
     titleScenarioActivity.prompt = null;
-    appendTitleScenarioMessage("guide", AI_UNAVAILABLE_MESSAGE);
+    appendTitleScenarioMessage("guide", formatApiError(error, "이미지 생성 프롬프트 만들기"));
+    return false;
   } finally {
     titleScenarioActivity.busy = false;
     renderTitleScenarioActivity();
@@ -2205,7 +2135,13 @@ async function renderTitleScenarioResult() {
   if (!titleScenarioActivity.prompt?.ko || !titleScenarioActivity.prompt?.en) {
     appendTitleScenarioMessage("guide", "AI 사서가 표지 그림 프롬프트를 마지막으로 다듬는 중이야.");
     renderTitleScenarioActivity();
-    await createNanoBananaPromptWithAI();
+    const created = await createNanoBananaPromptWithAI();
+    if (!created || !titleScenarioActivity.prompt?.ko || !titleScenarioActivity.prompt?.en) {
+      titleScenarioActivity.stage = "review";
+      appendTitleScenarioMessage("guide", "프롬프트가 아직 완성되지 않았어요. 아래의 ‘이거 좋아! 확정하기’를 다시 누르면 같은 내용으로 재시도할 수 있어요.");
+      renderTitleScenarioActivity();
+      return false;
+    }
   }
 
   titleScenarioActivity.stage = "final";
@@ -2271,6 +2207,7 @@ async function renderTitleScenarioResult() {
   card.append(content, librarian);
   resultPanel.appendChild(card);
   goToResult();
+  return true;
 }
 
 async function handleTitleScenarioFormSubmit(event) {
@@ -2355,7 +2292,8 @@ function createCharacterChatState(book = selectedBook) {
     bookTitle: book.title,
     selectedCharacter: null,
     messages: [],
-    busy: false
+    busy: false,
+    forceScrollToBottom: true
   };
 }
 
@@ -2424,6 +2362,9 @@ function renderCharacterChatProfiles() {
 }
 
 function renderCharacterChatLog() {
+  const distanceFromBottom = characterChatLog.scrollHeight - characterChatLog.scrollTop - characterChatLog.clientHeight;
+  const shouldStickToBottom = Boolean(characterChatActivity?.forceScrollToBottom) || distanceFromBottom <= 64;
+  const previousScrollTop = characterChatLog.scrollTop;
   characterChatLog.innerHTML = "";
   const messages = characterChatActivity?.messages || [];
 
@@ -2432,6 +2373,7 @@ function renderCharacterChatLog() {
     empty.className = "character-chat-empty";
     empty.textContent = "아직 대화가 없습니다. 인물을 고르고 첫 질문을 건네 보세요.";
     characterChatLog.appendChild(empty);
+    characterChatActivity.forceScrollToBottom = false;
     return;
   }
 
@@ -2446,7 +2388,13 @@ function renderCharacterChatLog() {
     characterChatLog.appendChild(item);
   });
 
-  characterChatLog.scrollTop = characterChatLog.scrollHeight;
+  if (shouldStickToBottom) {
+    const behavior = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+    characterChatLog.scrollTo({ top: characterChatLog.scrollHeight, behavior });
+  } else {
+    characterChatLog.scrollTop = previousScrollTop;
+  }
+  characterChatActivity.forceScrollToBottom = false;
 }
 
 function renderCharacterChatActivity() {
@@ -2469,6 +2417,7 @@ function selectCharacterChatCharacter(index) {
 
   characterChatActivity.selectedCharacter = character;
   characterChatActivity.messages = [];
+  characterChatActivity.forceScrollToBottom = true;
   const rules = getCharacterChatRules(selectedBook, character);
   appendCharacterChatMessage("character", rules.starter, character);
   showCharacterChatError("");
@@ -2525,7 +2474,7 @@ async function submitCharacterChatMessage(text) {
     if (!reply) throw new Error(AI_UNAVAILABLE_MESSAGE);
     appendCharacterChatMessage("character", reply, character);
   } catch (error) {
-    appendCharacterChatMessage("character", AI_UNAVAILABLE_MESSAGE, character);
+    appendCharacterChatMessage("character", formatApiError(error, "인물의 답변 만들기"), character);
   } finally {
     characterChatActivity.busy = false;
     renderCharacterChatActivity();
@@ -3474,27 +3423,36 @@ function selectBook(bookId) {
   });
 }
 
-function normalizeBook(book, index) {
-  const fallback = fallbackBooks[index % fallbackBooks.length];
+function normalizeBook(book) {
+  if (!book || typeof book !== "object") return null;
+  const id = String(book.id || "").trim();
+  const title = String(book.title || "").trim();
+  const author = String(book.author || "").trim();
+  if (!id || !title || !author) return null;
 
   return {
-    id: book.id || `book-${index + 1}`,
-    title: book.title || fallback.title,
-    author: book.author || fallback.author,
-    description: book.description || fallback.description,
-    cover: book.cover || fallback.cover || "",
-    coverA: book.coverA || fallback.coverA,
-    coverB: book.coverB || fallback.coverB,
-    spineWidth: Number(book.spineWidth || fallback.spineWidth),
-    spineHeight: Number(book.spineHeight || fallback.spineHeight)
+    id,
+    title,
+    author,
+    description: String(book.description || "책 설명이 아직 준비되지 않았습니다."),
+    cover: String(book.cover || BOOK_DISPLAY_DEFAULTS.cover),
+    coverA: String(book.coverA || BOOK_DISPLAY_DEFAULTS.coverA),
+    coverB: String(book.coverB || BOOK_DISPLAY_DEFAULTS.coverB),
+    spineWidth: Number(book.spineWidth || BOOK_DISPLAY_DEFAULTS.spineWidth),
+    spineHeight: Number(book.spineHeight || BOOK_DISPLAY_DEFAULTS.spineHeight)
   };
 }
 
 async function loadBooks() {
+  startButton.disabled = true;
+  retryBooksButton.classList.add("is-hidden");
+  bookLoadStatus.classList.remove("is-error");
+  bookLoadStatus.querySelector("span").textContent = "책 목록을 불러오는 중입니다.";
+
   try {
     const response = await fetch("./books.json", { cache: "no-store" });
     if (!response.ok) {
-      throw new Error("Cannot load books.json");
+      throw new Error(`books.json HTTP ${response.status}`);
     }
 
     const loadedBooks = await response.json();
@@ -3502,14 +3460,24 @@ async function loadBooks() {
       throw new Error("books.json is empty");
     }
 
-    books = loadedBooks.map(normalizeBook);
+    books = loadedBooks.map(normalizeBook).filter(Boolean);
+    if (!books.length) throw new Error("books.json has no valid book records");
   } catch (error) {
-    books = [...fallbackBooks];
+    books = [];
+    selectedBook = null;
+    shelfRow.innerHTML = "";
+    bookLoadStatus.classList.add("is-error");
+    bookLoadStatus.querySelector("span").textContent = "책 목록을 불러오지 못했어요. 로컬에서는 웹 서버로 실행했는지 확인하고 다시 시도해 주세요.";
+    retryBooksButton.classList.remove("is-hidden");
+    return false;
   }
 
   selectedBook = books[0];
   buildShelf();
   selectBook(selectedBook.id);
+  startButton.disabled = false;
+  bookLoadStatus.querySelector("span").textContent = `${books.length}권의 책을 불러왔습니다.`;
+  return true;
 }
 
 function handleHeroPointerDown(event) {
@@ -3654,6 +3622,7 @@ resultBackToBooks.addEventListener("click", returnToBookShelf);
 answerGuessButton.addEventListener("click", renderAnswerGuess);
 nextQuestionButton.addEventListener("click", () => renderCategoryChoices({ updateDialogue: false }));
 startButton.addEventListener("click", goToActivityMenu);
+retryBooksButton.addEventListener("click", loadBooks);
 startScenarioButton.addEventListener("click", goToScenario);
 startAdventureActivityButton.addEventListener("click", openAdventureScreen);
 startCharacterChatButton.addEventListener("click", goToCharacterChat);
@@ -3701,6 +3670,34 @@ teacherStudentList.addEventListener("click", (event) => {
   teacherState.selectedActivityTab = student ? getPreferredTeacherActivityTab(student) : "";
   renderTeacherStudentList();
   renderTeacherStudentDetail();
+});
+teacherStudentViewTab.addEventListener("click", () => setTeacherView("students"));
+teacherPromptViewTab.addEventListener("click", () => setTeacherView("prompts"));
+teacherPromptDateFilter.addEventListener("change", () => {
+  teacherState.promptDate = teacherPromptDateFilter.value;
+  renderTeacherPromptView();
+});
+teacherPromptClearDateButton.addEventListener("click", () => {
+  teacherState.promptDate = "";
+  teacherPromptDateFilter.value = "";
+  renderTeacherPromptView();
+});
+teacherPromptSelectAllButton.addEventListener("click", () => {
+  getVisibleTeacherPromptItems().forEach((item) => teacherState.selectedPromptIds.add(item.id));
+  renderTeacherPromptView();
+});
+teacherPromptClearSelectionButton.addEventListener("click", () => {
+  teacherState.selectedPromptIds.clear();
+  renderTeacherPromptView();
+});
+teacherPromptCopyButton.addEventListener("click", copySelectedTeacherPrompts);
+teacherPromptExportButton.addEventListener("click", exportSelectedTeacherPrompts);
+teacherPromptList.addEventListener("change", (event) => {
+  const checkbox = event.target.closest("[data-prompt-id]");
+  if (!checkbox) return;
+  if (checkbox.checked) teacherState.selectedPromptIds.add(checkbox.dataset.promptId);
+  else teacherState.selectedPromptIds.delete(checkbox.dataset.promptId);
+  renderTeacherPromptView();
 });
 scenarioStepForm.addEventListener("submit", handleTitleScenarioFormSubmit);
 scenarioChoicePanel.addEventListener("click", handleTitleScenarioChoiceClick);

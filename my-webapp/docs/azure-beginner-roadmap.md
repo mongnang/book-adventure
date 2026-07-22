@@ -150,7 +150,15 @@ Fields: bookId, title, passageText, chapter, page, sourceUrl
 
 ## 5. 로컬에서 연습 실행
 
-프론트만 볼 때는 `index.html`을 브라우저로 열어도 됩니다.
+프론트만 볼 때도 `file://`로 `index.html`을 직접 열지 않습니다. 현재 책 목록의 단일 원본인 `books.json`을 `fetch`로 읽기 때문에 간단한 HTTP 서버가 필요합니다.
+
+저장소 루트에서 프론트만 확인하는 예시는 다음과 같습니다.
+
+```powershell
+python -m http.server 4173 --directory my-webapp
+```
+
+그다음 `http://localhost:4173/`을 엽니다. `books.json`을 읽지 못하면 앱은 오래된 내장 목록을 대신 보여 주지 않고 오류 안내와 `다시 시도` 버튼을 표시합니다.
 
 API까지 로컬에서 보려면 다음이 필요합니다.
 
@@ -161,7 +169,7 @@ API까지 로컬에서 보려면 다음이 필요합니다.
 예상 흐름:
 
 ```powershell
-cd api
+cd my-webapp/api
 npm install
 Copy-Item local.settings.sample.json local.settings.json
 npm start
@@ -170,7 +178,7 @@ npm start
 전체 프론트와 API를 함께 보려면:
 
 ```powershell
-swa start . --api-location api
+swa start my-webapp --api-location my-webapp/api
 ```
 
 AI 기능까지 확인하려면 Azure 키를 설정해야 합니다. 키가 없으면 `AI와 연결이 불안정합니다. 다시 시도해보세요.`라고 표시됩니다.
