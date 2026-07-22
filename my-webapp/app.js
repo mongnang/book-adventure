@@ -154,10 +154,6 @@ const majorCharactersByBook = {
     "동이",
     "성 서방네 처녀"
   ],
-  "sonagi": [
-    "소년",
-    "소녀"
-  ],
   "unlucky-day": [
     "김 첨지",
     "아내",
@@ -172,11 +168,6 @@ const majorCharactersByBook = {
     "나",
     "점순",
     "장인"
-  ],
-  "young-prince": [
-    "어린 왕자",
-    "조종사",
-    "장미"
   ],
   "honggildong": [
     "홍길동",
@@ -208,25 +199,10 @@ const majorCharactersByBook = {
     "채영신",
     "마을 사람"
   ],
-  "munjangganghwa": [
-    "글쓴이",
-    "독자",
-    "문장"
-  ],
-  "nami-janggun": [
-    "남이",
-    "왕",
-    "신하들"
-  ],
   "mujong": [
     "이형식",
     "박영채",
     "김선형"
-  ],
-  "old-man-sea": [
-    "산티아고",
-    "마놀린",
-    "바다"
   ],
   "alice": [
     "앨리스",
@@ -259,11 +235,6 @@ const majorCharactersByBook = {
     "피노키오",
     "제페토",
     "푸른 요정"
-  ],
-  "momo": [
-    "모모",
-    "베포",
-    "회색 신사들"
   ]
 };
 
@@ -273,10 +244,6 @@ const characterRoleByBook = {
     "동행",
     "젊은 장돌뱅이",
     "회상 속 인물"
-  ],
-  "sonagi": [
-    "주요 인물",
-    "주요 인물"
   ],
   "unlucky-day": [
     "인력거꾼",
@@ -292,11 +259,6 @@ const characterRoleByBook = {
     "데릴사위가 되려는 머슴",
     "장인의 딸",
     "점순의 아버지"
-  ],
-  "young-prince": [
-    "여행자",
-    "이야기하는 사람",
-    "소중한 존재"
   ],
   "honggildong": [
     "주인공",
@@ -328,25 +290,10 @@ const characterRoleByBook = {
     "농촌 교육에 헌신한 청년",
     "농촌 공동체의 목소리"
   ],
-  "munjangganghwa": [
-    "화자",
-    "읽는 사람",
-    "생각의 대상"
-  ],
-  "nami-janggun": [
-    "장군",
-    "권력자",
-    "주변 인물"
-  ],
   "mujong": [
     "교사",
     "전통적 삶에서 새 길을 찾는 인물",
     "신교육을 받은 인물"
-  ],
-  "old-man-sea": [
-    "노인",
-    "소년",
-    "상징적 대상"
   ],
   "alice": [
     "주인공",
@@ -379,11 +326,6 @@ const characterRoleByBook = {
     "나무 인형",
     "피노키오를 만든 아버지",
     "피노키오를 돕고 시험하는 존재"
-  ],
-  "momo": [
-    "주인공",
-    "친구",
-    "상대 세력"
   ]
 };
 
