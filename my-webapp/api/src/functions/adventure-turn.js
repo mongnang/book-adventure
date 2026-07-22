@@ -21,7 +21,9 @@ app.http("adventureTurn", {
     try {
       const aiAnswer = await completeChat(buildTurnMessages(payload), {
         temperature: 0.45,
-        maxTokens: 1400
+        maxTokens: 800,
+        reasoningEffort: "minimal",
+        verbosity: "low"
       });
       answer = String(aiAnswer || "").trim();
       if (!answer) throw new Error("Azure OpenAI returned an empty answer.");

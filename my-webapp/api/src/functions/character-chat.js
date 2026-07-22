@@ -21,7 +21,9 @@ app.http("characterChat", {
     try {
       const aiReply = await completeChat(buildCharacterChatMessages(payload), {
         temperature: 0.56,
-        maxTokens: 1200
+        maxTokens: 800,
+        reasoningEffort: "minimal",
+        verbosity: "low"
       });
       reply = String(aiReply || "").trim();
       if (!reply) throw new Error("Azure OpenAI returned an empty character reply.");

@@ -72,6 +72,10 @@ function supportsTemperatureForDeployment(deployment) {
   return !/^gpt-5/i.test(deployment || "") && !/^o\d/i.test(deployment || "");
 }
 
+function supportsGpt5MiniOptions(deployment) {
+  return /^gpt-5-mini(?:-|$)/i.test(deployment || "");
+}
+
 function buildChatCompletionsBody(config, messages, options) {
   const body = {
     messages,
@@ -88,6 +92,16 @@ function buildChatCompletionsBody(config, messages, options) {
 
   if (options.responseFormat) {
     body.response_format = options.responseFormat;
+  }
+
+  if (supportsGpt5MiniOptions(config.deployment)) {
+    if (options.reasoningEffort) {
+      body.reasoning_effort = options.reasoningEffort;
+    }
+
+    if (options.verbosity) {
+      body.verbosity = options.verbosity;
+    }
   }
 
   return body;
@@ -123,6 +137,16 @@ function buildResponsesBody(config, messages, options) {
 
   if (supportsTemperatureForDeployment(config.deployment) && options.temperature !== undefined) {
     body.temperature = options.temperature;
+  }
+
+  if (supportsGpt5MiniOptions(config.deployment)) {
+    if (options.reasoningEffort) {
+      body.reasoning = { effort: options.reasoningEffort };
+    }
+
+    if (options.verbosity) {
+      body.text = { verbosity: options.verbosity };
+    }
   }
 
   return body;

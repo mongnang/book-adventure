@@ -41,6 +41,8 @@ app.http("checkAnswer", {
         const text = await completeChat(buildAnswerCheckMessages(payload), {
           temperature: 0.1,
           maxTokens: 300,
+          reasoningEffort: "minimal",
+          verbosity: "low",
           responseFormat: { type: "json_object" }
         });
         const parsed = parseJsonObject(text);

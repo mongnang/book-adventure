@@ -71,6 +71,8 @@ app.http("conversationAssessment", {
       const text = await completeChat(buildAssessmentMessages(payload), {
         temperature: 0.15,
         maxTokens: 850,
+        reasoningEffort: "low",
+        verbosity: "low",
         responseFormat: { type: "json_object" }
       });
       assessment = normalizeAssessment(parseJsonObject(text));

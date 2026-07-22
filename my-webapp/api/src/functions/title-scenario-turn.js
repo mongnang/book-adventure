@@ -66,6 +66,8 @@ app.http("titleScenarioTurn", {
       const text = await completeChat(buildTitleScenarioMessages(payload), {
         temperature: 0.55,
         maxTokens: 1600,
+        reasoningEffort: "low",
+        verbosity: "low",
         responseFormat: { type: "json_object" }
       });
       result = normalizeTitleScenarioResult(parseJsonObject(text), payload);
