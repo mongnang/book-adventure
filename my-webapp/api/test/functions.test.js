@@ -66,7 +66,7 @@ test("activity 1 prompt request returns complete data and safe timing metadata",
     assert.equal(String(url), "https://example.openai.azure.com/openai/v1/responses");
     assert.deepEqual(body.reasoning, { effort: "minimal" });
     assert.equal(body.text.verbosity, "low");
-    assert.equal(body.max_output_tokens, 800);
+    assert.equal(body.max_output_tokens, 1600);
     return new Response(JSON.stringify({
       id: "resp_test_1",
       output_text: JSON.stringify({

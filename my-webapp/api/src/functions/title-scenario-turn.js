@@ -73,7 +73,7 @@ const titleScenarioTurnDefinition = {
     try {
       openaiResult = await completeChatDetailed(buildTitleScenarioMessages(payload), {
         temperature: 0.55,
-        maxTokens: 800,
+        maxTokens: payload.action === "prompt" ? 1600 : 800,
         reasoningEffort: "minimal",
         verbosity: "low",
         responseFormat: { type: "json_object" }
