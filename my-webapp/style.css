@@ -1925,6 +1925,20 @@ body[data-active-screen="teacherDashboardScreen"] .screen-arrow-nav {
   margin-bottom: 8px;
 }
 
+.profile-button.character-chat-profile {
+  grid-template-rows: auto minmax(19px, auto) minmax(16px, auto);
+  min-height: 172px;
+}
+
+.character-chat-profile .profile-image {
+  margin-bottom: 4px;
+}
+
+.character-chat-profile .profile-name {
+  display: block;
+  line-height: 1.35;
+}
+
 .character-chat-profile.is-selected {
   border-color: rgba(255, 229, 184, 0.5);
   background:
@@ -3764,6 +3778,10 @@ body[data-active-screen="teacherDashboardScreen"] .screen-arrow-nav {
   .character-chat-profile-grid {
     grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
     max-height: 210px;
+  }
+
+  .profile-button.character-chat-profile {
+    min-height: 148px;
   }
 
   .character-chat-grid {
