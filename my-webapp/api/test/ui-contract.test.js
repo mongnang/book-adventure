@@ -69,6 +69,11 @@ test("title and activity layouts keep the requested responsive scroll contracts"
   assert.match(html, /id="characterChatLog" tabindex="0"/);
 });
 
+test("activity 2 place category uses book-neutral guidance", () => {
+  assert.match(app, /summary:\s*"이야기의 주요 장소와 숨은 단서"/);
+  assert.doesNotMatch(app, /장터, 밤길, 메밀꽃밭의 단서/);
+});
+
 test("teacher results prioritize core metrics and use a compact empty score state", () => {
   assert.match(html, /id="teacherStudentSelect"/);
   assert.match(app, /coreGroup\.className = "teacher-summary-primary"/);
