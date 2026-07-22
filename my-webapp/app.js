@@ -138,7 +138,7 @@ const questionCategories = [
     id: "place",
     number: "②",
     title: "장소 돌아보기",
-    summary: "장터, 밤길, 메밀꽃밭의 단서",
+    summary: "이야기의 주요 장소와 숨은 단서",
     status: "장소 질문 고르기",
     questions: [
       "이 장소에는 어떤 단서가 숨어 있을까?",

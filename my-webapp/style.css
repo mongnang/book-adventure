@@ -20,6 +20,10 @@
   --dialogue-height: clamp(300px, 42vh, 430px);
   --hud-width: clamp(270px, 26vw, 390px);
   --hud-gap: clamp(22px, 3.4vw, 54px);
+  --hud-screen-edge: clamp(22px, 3vw, 48px);
+  --dialogue-screen-edge: clamp(20px, 4vw, 72px);
+  --dialogue-hud-gap: clamp(14px, 1.2vw, 20px);
+  --adventure-stage-gutter: max(0px, calc((var(--app-width) - 1480px) / 2));
   --stage-center-x: calc((100% - var(--hud-width) - var(--hud-gap)) / 2);
   --choice-panel-x: 50%;
   --portrait-x: 50%;
@@ -2394,7 +2398,7 @@ body[data-active-screen="teacherDashboardScreen"] .screen-arrow-nav {
 .adventure-hud {
   position: absolute;
   top: clamp(58px, 8vh, 82px);
-  right: clamp(22px, 3vw, 48px);
+  right: var(--hud-screen-edge);
   bottom: auto;
   z-index: 4;
   display: flex;
@@ -2722,8 +2726,8 @@ body[data-active-screen="teacherDashboardScreen"] .screen-arrow-nav {
 
 .dialogue-box {
   position: absolute;
-  left: clamp(20px, 4vw, 72px);
-  right: calc(var(--hud-width) + 16px);
+  left: calc(var(--dialogue-screen-edge) - var(--adventure-stage-gutter) - var(--adventure-pad-x));
+  right: calc(var(--hud-width) + var(--hud-screen-edge) + var(--dialogue-hud-gap) - var(--adventure-stage-gutter) - var(--adventure-pad-x));
   bottom: 0;
   z-index: 3;
   display: flex;
